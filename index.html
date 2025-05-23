@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,10 +22,7 @@
         }
     </style>
 </head>
-
 <body>
-
-    <!-- Setup Screen -->
     <div id="setup">
         <h2>Spion Einstellungen</h2>
         <label>Anzahl Spieler:</label>
@@ -47,70 +44,25 @@
             <label>Main Word:</label>
             <input type="text" id="mainWord"><br><br>
             <label>Spy Word:</label>
-            <input type="text" id="spyWord"><br><br>
+            <input type="text" id="spyWord" placeholder="(optional, default: 'spy')"><br><br>
         </div>
 
         <button onclick="startGame()">Spiel starten</button>
     </div>
 
-    <!-- Word Reveal Screen -->
     <div id="game" class="hidden">
         <h2>Gib dein Handy weiter</h2>
         <button onclick="showWord()">Tap to Reveal</button>
         <h3 id="wordDisplay" class="hidden"></h3>
-        <button id="nextPlayer" onclick="nextPlayer()" class="hidden">Next Player</button>
+        <button id="nextPlayer" onclick="nextPlayer()" class="hidden">Nächster Spieler</button>
     </div>
-    <script>const categories = {
-            "Standorte": [
-                    "Haus", "Wohnung", "Garten", "Balkon", "Dachboden",
-                    "Keller", "Garage", "Schule", "Universität", "Büro",
-                    "Krankenhaus", "Arztpraxis", "Supermarkt", "Einkaufszentrum", "Restaurant",
-                    "Café", "Bäckerei", "Hotel", "Flughafen", "Bahnhof",
-                    "Bushaltestelle", "Tankstelle", "Park", "Spielplatz", "Zoo",
-                    "Museum", "Theater", "Kino", "Bibliothek", "Schwimmbad",
-                    "Sportplatz", "Stadion", "Strand", "Berg", "Wald",
-                    "See", "Fluss", "Insel", "Marktplatz", "Kirche",
-                    "Moschee", "Tempel", "Friedhof", "Rathaus", "Polizeistation",
-                    "Feuerwache", "Gefängnis", "Baustelle", "Fabrik", "Autobahn"
-                ],
-    
-            "Objekte": [
-                    "Tisch", "Stuhl", "Bett", "Lampe", "Schrank",
-                    "Regal", "Sofa", "Teppich", "Uhr", "Spiegel",
-                    "Fernseher", "Computer", "Laptop", "Handy", "Tablet",
-                    "Kamera", "Buch", "Heft", "Stift", "Lineal",
-                    "Schere", "Tasche", "Rucksack", "Brille", "Schlüssel",
-                    "Auto", "Fahrrad", "Roller", "Motorrad", "Flugzeug",
-                    "Zug", "Schiff", "Boot", "Ball", "Spielzeug",
-                    "Gitarre", "Klavier", "Mikrofon", "Kopfhörer", "Radio",
-                    "Fernbedienung", "Kühlschrank", "Herd", "Waschmaschine", "Mikrowelle",
-                    "Toaster", "Kaffeemaschine", "Glas", "Tasse", "Teller"
-                ],
-            
-            "Natur": [
-                    "Baum", "Blume", "Strauch", "Gras", "Moos",
-                    "Wald", "Dschungel", "Steppe", "Wüste", "Sumpf",
-                    "See", "Fluss", "Bach", "Ozean", "Meer",
-                    "Küste", "Insel", "Gebirge", "Hügel", "Tal",
-                    "Felsen", "Höhle", "Vulkan", "Gletscher", "Wasserfall",
-                    "Sonne", "Mond", "Sterne", "Wolken", "Regen",
-                    "Schnee", "Hagel", "Sturm", "Wind", "Nebel",
-                    "Tau", "Erde", "Sand", "Lehm", "Feld",
-                    "Wiese", "Weide", "Heide", "Klippe", "Riff",
-                    "Koralle", "Wurzel", "Ast", "Blatt",
-                    "Frucht", "Pilz"
-                ],
-            
-                    "Tiere":["Löwe", "Tiger", "Elefant", "Giraffe", "Nashorn",
-                    "Zebra", "Krokodil", "Känguru", "Koala", "Panda",
-                    "Pinguin", "Delfin", "Wal", "Hai", "Tintenfisch",
-                    "Seestern", "Krake", "Seehund", "Eisbär", "Fuchs",
-                    "Wolf", "Bär", "Reh", "Hirsch", "Dachs",
-                    "Waschbär", "Eichhörnchen", "Hase", "Maulwurf", "Igel",
-                    "Schildkröte", "Schlange", "Chamäleon", "Leguan", "Papagei",
-                    "Uhu", "Rabe", "Strauß", "Spinne", "Ameise",
-                    "Biene", "Marienkäfer", "Libelle", "Frosch", "Molch",
-                    "Karpfen", "Forelle", "Eidechse", "Otter", "Stachelschwein"]
+
+    <script>
+        const categories = {
+            "Standorte": ["Haus", "Wohnung", "Garten", "Balkon", "Dachboden", "Keller", "Garage", "Schule", "Universität", "Büro"],
+            "Objekte": ["Tisch", "Stuhl", "Bett", "Lampe", "Schrank"],
+            "Natur": ["Baum", "Blume", "Strauch", "Gras", "Moos"],
+            "Tiere": ["Löwe", "Tiger", "Elefant", "Giraffe", "Nashorn"]
         };
 
         let players = [];
@@ -120,11 +72,7 @@
         function toggleManualInput() {
             const category = document.getElementById("category").value;
             const manualInputDiv = document.getElementById("manualInput");
-            if (category === "Manuell") {
-                manualInputDiv.classList.remove("hidden");
-            } else {
-                manualInputDiv.classList.add("hidden");
-            }
+            manualInputDiv.classList.toggle("hidden", category !== "Manuell");
         }
 
         function startGame() {
@@ -133,38 +81,41 @@
             const category = document.getElementById("category").value;
 
             if (spyCount >= playerCount) {
-                alert("Spies must be fewer than total players!");
+                alert("Spione müssen weniger als Spieler sein!");
                 return;
             }
 
-            players = Array.from({ length: playerCount }, (_, i) => `Player ${i + 1}`);
+            players = Array.from({ length: playerCount }, (_, i) => `Spieler ${i + 1}`);
 
             let mainWord, spyWord;
 
             if (category === "Manuell") {
-                mainWord = document.getElementById("mainWord").value;
-                spyWord = document.getElementById("spyWord").value;
+                mainWord = document.getElementById("mainWord").value.trim();
+                spyWord = document.getElementById("spyWord").value.trim();
 
-                if (!mainWord || !spyWord) {
-                    alert("Please enter both main and spy words!");
+                if (!mainWord) {
+                    alert("Bitte ein Hauptwort eingeben!");
                     return;
+                }
+
+                if (!spyWord) {
+                    spyWord = "spy";
                 }
             } else {
                 const words = categories[category];
                 mainWord = words[Math.floor(Math.random() * words.length)];
-                spyWord = words[Math.floor(Math.random() * words.length)];
-                while (spyWord === mainWord) {
+                do {
                     spyWord = words[Math.floor(Math.random() * words.length)];
-                }
+                } while (spyWord === mainWord);
             }
 
             assignedWords = Array(playerCount).fill(mainWord);
             for (let i = 0; i < spyCount; i++) {
-                let randomIndex;
+                let index;
                 do {
-                    randomIndex = Math.floor(Math.random() * playerCount);
-                } while (assignedWords[randomIndex] !== mainWord);
-                assignedWords[randomIndex] = spyWord;
+                    index = Math.floor(Math.random() * playerCount);
+                } while (assignedWords[index] !== mainWord);
+                assignedWords[index] = spyWord;
             }
 
             document.getElementById("setup").classList.add("hidden");
@@ -185,12 +136,12 @@
             currentIndex++;
             if (currentIndex >= players.length) {
                 alert("Alle Spieler haben ihre Wörter gesehen!");
-                location.reload(); // Reset game after last player
+                location.reload();
             } else {
                 document.getElementById("wordDisplay").classList.add("hidden");
                 document.getElementById("nextPlayer").classList.add("hidden");
             }
-        }</script>
+        }
+    </script>
 </body>
-
 </html>
