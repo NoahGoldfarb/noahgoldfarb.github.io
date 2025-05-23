@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spion Online</title>
+    <title>spy Online</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -22,16 +22,16 @@
         }
     </style>
 </head>
-<body>
+<body onload="toggleManualInput()">
     <div id="setup">
-        <h2>Spion Einstellungen</h2>
-        <label>Anzahl Spieler:</label>
+        <h2>Spion Settings</h2>
+        <label>Number Players:</label>
         <input type="number" id="playerCount" min="3" max="20" value="4"><br><br>
 
-        <label>Anzahl Spione:</label>
+        <label>Number Spy's:</label>
         <input type="number" id="spyCount" min="1" max="20" value="1"><br><br>
 
-        <label>Kategorie:</label>
+        <label>Category:</label>
         <select id="category" onchange="toggleManualInput()">
             <option value="Standorte">Standorte</option>
             <option value="Objekte">Objekte</option>
@@ -47,11 +47,17 @@
             <input type="text" id="spyWord" placeholder="(optional, default: 'spy')"><br><br>
         </div>
 
+        <div id="spyOption" class="hidden">
+            <label>Choose Spyword:</label><br>
+            <input type="radio" name="spyWordChoice" value="random" checked> Zufälliges anderes Wort<br>
+            <input type="radio" name="spyWordChoice" value="spy"> "spy" verwenden<br><br>
+        </div>
+
         <button onclick="startGame()">Spiel starten</button>
     </div>
 
     <div id="game" class="hidden">
-        <h2>Gib dein Handy weiter</h2>
+        <h2>Pass on the phone</h2>
         <button onclick="showWord()">Tap to Reveal</button>
         <h3 id="wordDisplay" class="hidden"></h3>
         <button id="nextPlayer" onclick="nextPlayer()" class="hidden">Nächster Spieler</button>
@@ -71,8 +77,8 @@
 
         function toggleManualInput() {
             const category = document.getElementById("category").value;
-            const manualInputDiv = document.getElementById("manualInput");
-            manualInputDiv.classList.toggle("hidden", category !== "Manuell");
+            document.getElementById("manualInput").classList.toggle("hidden", category !== "Manuell");
+            document.getElementById("spyOption").classList.toggle("hidden", category === "Manuell");
         }
 
         function startGame() {
@@ -104,9 +110,15 @@
             } else {
                 const words = categories[category];
                 mainWord = words[Math.floor(Math.random() * words.length)];
-                do {
-                    spyWord = words[Math.floor(Math.random() * words.length)];
-                } while (spyWord === mainWord);
+
+                const spyChoice = document.querySelector('input[name="spyWordChoice"]:checked').value;
+                if (spyChoice === "spy") {
+                    spyWord = "spy";
+                } else {
+                    do {
+                        spyWord = words[Math.floor(Math.random() * words.length)];
+                    } while (spyWord === mainWord);
+                }
             }
 
             assignedWords = Array(playerCount).fill(mainWord);
