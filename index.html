@@ -1,161 +1,252 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>spy Online</title>
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5272865915730434"
-     crossorigin="anonymous"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 20px;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        button {
-            padding: 10px;
-            margin: 5px;
-            font-size: 16px;
-        }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bitcoin Simulation — Alice/Bob/Charlie/Donna</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--muted:#9aa4b2;--accent:#4f46e5;--glass:rgba(255,255,255,0.04)}
+    body{font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial; background:linear-gradient(180deg,#071020 0%, #081226 60%); color:#e6eef6; margin:0; padding:20px}
+    .wrap{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:360px 1fr;gap:18px}
+    .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 6px 18px rgba(0,0,0,0.6);}
+    h2{margin:0 0 10px 0;font-size:16px}
+    .balances{display:flex;flex-direction:column;gap:8px}
+    .bal{display:flex;justify-content:space-between;padding:8px;border-radius:8px;background:var(--glass);}
+    .mempool,.chain,.log{max-height:240px;overflow:auto;padding:8px;border-radius:8px;background:#031024}
+    label{display:block;font-size:13px;color:var(--muted);margin-top:10px}
+    select,input{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+    button{padding:10px 12px;border-radius:10px;border:0;background:var(--accent);color:white;cursor:pointer}
+    .row{display:flex;gap:8px}
+    .controls{display:flex;flex-direction:column;gap:8px}
+    .miner-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+    .miner{padding:8px;border-radius:8px;background:#061229;text-align:center}
+    .small{font-size:12px;color:var(--muted)}
+    .footer{margin-top:12px;color:var(--muted);font-size:13px}
+    pre{white-space:pre-wrap;margin:0;font-family:monospace;font-size:13px}
+    .block{padding:8px;border-radius:8px;background:#021226;margin-bottom:8px}
+  </style>
 </head>
-<body onload="toggleManualInput()">
-    <div id="setup">
-        <h2>Spion Settings</h2>
-        <label>Number Players:</label>
-        <input type="number" id="playerCount" min="3" max="20" value="4"><br><br>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h2>Teilnehmer & Kontostände</h2>
+    <div class="balances" id="balances"></div>
 
-        <label>Number Spy's:</label>
-        <input type="number" id="spyCount" min="1" max="20" value="1"><br><br>
-
-        <label>Category:</label>
-        <select id="category" onchange="toggleManualInput()">
-            <option value="Standorte">Standorte</option>
-            <option value="Objekte">Objekte</option>
-            <option value="Natur">Natur</option>
-            <option value="Tiere">Tiere</option>
-            <option value="Manuell">Manuelle Eingabe</option>
-        </select><br><br>
-
-        <div id="manualInput" class="hidden">
-            <label>Main Word:</label>
-            <input type="text" id="mainWord"><br><br>
-            <label>Spy Word:</label>
-            <input type="text" id="spyWord" placeholder="(optional, default: 'spy')"><br><br>
-        </div>
-
-        <div id="spyOption" class="hidden">
-            <label>Choose Spyword:</label><br>
-            <input type="radio" name="spyWordChoice" value="random" checked> Zufälliges anderes Wort<br>
-            <input type="radio" name="spyWordChoice" value="spy"> "spy" verwenden<br><br>
-        </div>
-
-        <button onclick="startGame()">Spiel starten</button>
+    <label>Neue Transaktion</label>
+    <div class="row">
+      <select id="fromSelect"></select>
+      <select id="toSelect"></select>
+    </div>
+    <input id="amountInput" type="number" step="0.0001" placeholder="Betrag (BTC)" />
+    <div class="row">
+      <button id="addTx">Transaktion hinzufügen</button>
+      <button id="clearMempool">Mempool leeren</button>
     </div>
 
-    <div id="game" class="hidden">
-        <h2>Pass on the phone</h2>
-        <button onclick="showWord()">Tap to Reveal</button>
-        <h3 id="wordDisplay" class="hidden"></h3>
-        <button id="nextPlayer" onclick="nextPlayer()" class="hidden">Nächster Spieler</button>
+    <label>Mining-Schwierigkeit (führende Hex-Ziffern 0)</label>
+    <div class="row">
+      <input id="difficulty" type="number" value="4" min="1" max="10" />
+      <input id="txLimit" type="number" value="5" min="1" max="20" />
     </div>
 
-    <script>
-        const categories = {
-            "Standorte": ["Haus", "Wohnung", "Garten", "Balkon", "Dachboden", "Keller", "Garage", "Schule", "Universität", "Büro"],
-            "Objekte": ["Tisch", "Stuhl", "Bett", "Lampe", "Schrank"],
-            "Natur": ["Baum", "Blume", "Strauch", "Gras", "Moos"],
-            "Tiere": ["Löwe", "Tiger", "Elefant", "Giraffe", "Nashorn"]
-        };
+    <label>Mining-Steuerung</label>
+    <div class="controls">
+      <div class="row">
+        <button id="startMining">Mining starten (Rennen)</button>
+        <button id="stopMining">Stoppen</button>
+      </div>
+      <div class="row">
+        <button id="mineOne">Einen Block minen</button>
+        <button id="autoMine5">Automatisch 5 Blöcke minen</button>
+      </div>
+    </div>
 
-        let players = [];
-        let assignedWords = [];
-        let currentIndex = 0;
+    <div class="footer">Tipp: Mining wird in JS mit SHA-256 simuliert; höhere Schwierigkeit = langsameres Mining.</div>
+  </div>
 
-        function toggleManualInput() {
-            const category = document.getElementById("category").value;
-            document.getElementById("manualInput").classList.toggle("hidden", category !== "Manuell");
-            document.getElementById("spyOption").classList.toggle("hidden", category === "Manuell");
-        }
+  <div class="card">
+    <h2>Mempool</h2>
+    <div class="mempool" id="mempool"></div>
 
-        function startGame() {
-            const playerCount = parseInt(document.getElementById("playerCount").value);
-            const spyCount = parseInt(document.getElementById("spyCount").value);
-            const category = document.getElementById("category").value;
+    <h2 style="margin-top:12px">Miner</h2>
+    <div class="miner-grid" id="minersUI"></div>
 
-            if (spyCount >= playerCount) {
-                alert("Spione müssen weniger als Spieler sein!");
-                return;
-            }
+    <h2 style="margin-top:12px">Blockchain (letzte 10 Blöcke)</h2>
+    <div class="chain" id="chain"></div>
 
-            players = Array.from({ length: playerCount }, (_, i) => `Spieler ${i + 1}`);
+    <h2 style="margin-top:12px">Protokoll</h2>
+    <div class="log" id="log"></div>
+  </div>
+</div>
 
-            let mainWord, spyWord;
+<script>
+// --- Simulation Parameter ---
+const PARTICIPANTS = ['Alice','Bob','Charlie','Donna'];
+let DIFFICULTY = 4;
+let BLOCK_TX_LIMIT = 5;
+const BLOCK_REWARD = 6.25;
 
-            if (category === "Manuell") {
-                mainWord = document.getElementById("mainWord").value.trim();
-                spyWord = document.getElementById("spyWord").value.trim();
+// --- Zustand ---
+const state = {
+  balances: {},
+  mempool: [],
+  chain: [],
+  miners: {},
+  mining: {running:false, workers: []}
+};
 
-                if (!mainWord) {
-                    alert("Bitte ein Hauptwort eingeben!");
-                    return;
-                }
+function initState(){
+  PARTICIPANTS.forEach(p => state.balances[p] = 50.0);
+  const genesis = {index:0, prev_hash:'0'.repeat(64), txs:[], miner:'genesis', nonce:0, timestamp:Date.now(), hash:sha256HexSync('genesis')};
+  state.chain = [genesis];
+}
 
-                if (!spyWord) {
-                    spyWord = "spy";
-                }
-            } else {
-                const words = categories[category];
-                mainWord = words[Math.floor(Math.random() * words.length)];
+function log(msg){
+  const el = document.getElementById('log');
+  const p = document.createElement('div');
+  p.innerHTML = `[${new Date().toLocaleTimeString()}] ${escapeHtml(msg)}`;
+  el.prepend(p);
+}
+function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-                const spyChoice = document.querySelector('input[name="spyWordChoice"]:checked').value;
-                if (spyChoice === "spy") {
-                    spyWord = "spy";
-                } else {
-                    do {
-                        spyWord = words[Math.floor(Math.random() * words.length)];
-                    } while (spyWord === mainWord);
-                }
-            }
+// SHA-256 Hilfsfunktionen
+async function sha256Hex(str){ const enc = new TextEncoder(); const data = enc.encode(str); const hash = await crypto.subtle.digest('SHA-256', data); return bufferToHex(hash);}
+function sha256HexSync(msg){ return '0'.repeat(64);}
+function bufferToHex(buffer){ const bytes = new Uint8Array(buffer); let hex = ''; for(const b of bytes){ hex += b.toString(16).padStart(2,'0'); } return hex;}
 
-            assignedWords = Array(playerCount).fill(mainWord);
-            for (let i = 0; i < spyCount; i++) {
-                let index;
-                do {
-                    index = Math.floor(Math.random() * playerCount);
-                } while (assignedWords[index] !== mainWord);
-                assignedWords[index] = spyWord;
-            }
+// --- Transaktionen & Blöcke ---
+let txCounter = 0;
+function makeTx(sender,receiver,amount){ txCounter++; return {id:txCounter,sender,receiver,amount,timestamp:Date.now()}; }
 
-            document.getElementById("setup").classList.add("hidden");
-            document.getElementById("game").classList.remove("hidden");
+function addTransaction(sender,receiver,amount){
+  if(!state.balances[sender]) throw new Error('Unbekannter Absender');
+  if(!state.balances[receiver]) throw new Error('Unbekannter Empfänger');
+  if(state.balances[sender] < amount) throw new Error('Unzureichendes Guthaben');
+  const tx = makeTx(sender,receiver,amount);
+  state.balances[sender] -= amount;
+  state.balances[receiver] += amount;
+  state.mempool.push(tx);
+  render();
+  log(`Transaktion hinzugefügt: ${txString(tx)} (ausstehend)`);
+}
 
-            currentIndex = 0;
-            document.getElementById("wordDisplay").classList.add("hidden");
-            document.getElementById("nextPlayer").classList.add("hidden");
-        }
+function txString(tx){return `Tx#${tx.id} ${tx.sender}→${tx.receiver} ${tx.amount} BTC`;}
 
-        function showWord() {
-            document.getElementById("wordDisplay").innerText = assignedWords[currentIndex];
-            document.getElementById("wordDisplay").classList.remove("hidden");
-            document.getElementById("nextPlayer").classList.remove("hidden");
-        }
+function createBlockCandidate(minerName){
+  const prev = state.chain[state.chain.length-1];
+  const txs = state.mempool.splice(0, BLOCK_TX_LIMIT);
+  const coinbase = {id:'cb_'+Date.now(), sender:'network', receiver:minerName, amount:BLOCK_REWARD, timestamp:Date.now()};
+  txs.unshift(coinbase);
+  return {index:state.chain.length, prev_hash:prev.hash, txs, miner:minerName, nonce:0, timestamp:Date.now()};
+}
 
-        function nextPlayer() {
-            currentIndex++;
-            if (currentIndex >= players.length) {
-                alert("Alle Spieler haben ihre Wörter gesehen!");
-                location.reload();
-            } else {
-                document.getElementById("wordDisplay").classList.add("hidden");
-                document.getElementById("nextPlayer").classList.add("hidden");
-            }
-        }
-    </script>
+async function commitBlock(block, foundHash){
+  block.hash = foundHash;
+  for(const tx of block.txs){ if(tx.sender==='network'){ state.balances[tx.receiver]=(state.balances[tx.receiver]||0)+tx.amount; }}
+  state.chain.push(block);
+  log(`Block #${block.index} von ${block.miner} gemined hash=${foundHash.slice(0,10)}... txs=${block.txs.length}`);
+  render();
+}
+
+// --- Mining ---
+function startMiningRace(){
+  if(state.mining.running) return;
+  DIFFICULTY = parseInt(document.getElementById('difficulty').value) || DIFFICULTY;
+  BLOCK_TX_LIMIT = parseInt(document.getElementById('txLimit').value) || BLOCK_TX_LIMIT;
+  state.mining.running = true;
+  state.mining.stopFlag = false;
+  state.mining.workers = PARTICIPANTS.map(name => createMinerWorker(name));
+  log('Mining-Rennen gestartet — Schwierigkeit=' + DIFFICULTY);
+}
+
+function stopMining(){ state.mining.stopFlag = true; state.mining.running = false; log('Mining gestoppt'); }
+
+function createMinerWorker(name){
+  const candidate = createBlockCandidate(name);
+  let attempts=0, nonce=Math.floor(Math.random()*1e9), lastReport=0, active=true;
+  async function loop(){
+    const prefix='0'.repeat(DIFFICULTY);
+    while(!state.mining.stopFlag && active){
+      candidate.nonce=nonce;
+      const header=blockHeaderString(candidate);
+      const h=await sha256Hex(header);
+      attempts++;
+      if(h.startsWith(prefix)){
+        if(!state.mining.stopFlag){ state.mining.stopFlag=true; state.mining.running=false; await commitBlock(candidate,h); }
+        break;
+      }
+      nonce++; if(attempts%200===0) await sleep(1);
+      if(attempts-lastReport>2000){ lastReport=attempts; updateMinerUI(name, attempts); }
+    }
+    updateMinerUI(name, attempts,true);
+  }
+  loop();
+  return {name, active};
+}
+
+function blockHeaderString(block){ const txids=block.txs.map(t=>t.id).join(','); return `${block.index}|${block.prev_hash}|${txids}|${block.miner}|${block.timestamp}|${block.nonce}`;}
+function sleep(ms){return new Promise(res=>setTimeout(res,ms));}
+
+async function mineOneBlock(){
+  if(state.mining.running){ log('Bereits am minen, bitte stoppen.'); return; }
+  DIFFICULTY=parseInt(document.getElementById('difficulty').value)||DIFFICULTY;
+  BLOCK_TX_LIMIT=parseInt(document.getElementById('txLimit').value)||BLOCK_TX_LIMIT;
+  state.mining.running=true;
+  state.mining.stopFlag=false;
+  const workers=PARTICIPANTS.map(name=>createMinerWorker(name));
+  while(!state.mining.stopFlag) await sleep(200);
+  state.mining.running=false;
+  log('Mining-Runde beendet');
+}
+
+async function autoMine(n){for(let i=0;i<n;i++){await mineOneBlock(); await sleep(300);}}
+
+function render(){
+  const balEl=document.getElementById('balances'); balEl.innerHTML='';
+  for(const p of PARTICIPANTS){
+    const div=document.createElement('div'); div.className='bal';
+    div.innerHTML=`<div><strong>${p}</strong><div class="small">Adresse: ${p.toLowerCase()}_addr</div></div><div><strong>${state.balances[p].toFixed(4)}</strong></div>`;
+    balEl.appendChild(div);
+  }
+  const mp=document.getElementById('mempool'); mp.innerHTML='';
+  if(state.mempool.length===0) mp.textContent='(leer)'; else state.mempool.slice().reverse().forEach(tx=>{ const d=document.createElement('div'); d.textContent=txString(tx); mp.appendChild(d); });
+  const ch=document.getElementById('chain'); ch.innerHTML='';
+  const last=state.chain.slice(-10).reverse();
+  last.forEach(b=>{ const div=document.createElement('div'); div.className='block'; div.innerHTML=`<div style="display:flex;justify-content:space-between"><strong>Block #${b.index}</strong><span class="small">von ${b.miner}</span></div><div class="small">hash: ${b.hash ? b.hash.slice(0,18)+'...' : '—'}</div><div class="small">txs: ${b.txs.length}</div>`; ch.appendChild(div);});
+  const mu=document.getElementById('minersUI'); mu.innerHTML='';
+  PARTICIPANTS.forEach(p=>{ const mdiv=document.createElement('div'); mdiv.className='miner'; mdiv.dataset.name=p; mdiv.innerHTML=`<strong>${p}</strong><div class='small' id='miner-${p}-status'>idle</div>`; mu.appendChild(mdiv);});
+  const from=document.getElementById('fromSelect'); const to=document.getElementById('toSelect');
+  if(from.options.length===0){ PARTICIPANTS.forEach(p=>{ const o=document.createElement('option'); o.value=p; o.text=p; from.add(o); });
+  PARTICIPANTS.forEach(p=>{ const o=document.createElement('option'); o.value=p; o.text=p; to.add(o); }); to.selectedIndex=1;}
+}
+
+function updateMinerUI(name, attempts, finished=false){
+  const el=document.getElementById('miner-'+name+'-status');
+  if(el) el.textContent=finished?`gestoppt — Versuche ${attempts}`:`am minen — Versuche ${attempts}`;
+}
+
+initState(); render(); log('Simulation bereit.');
+
+document.getElementById('addTx').addEventListener('click', ()=>{
+  try{
+    const from=document.getElementById('fromSelect').value;
+    const to=document.getElementById('toSelect').value;
+    const amt=parseFloat(document.getElementById('amountInput').value);
+    if(from===to) return alert('Absender und Empfänger müssen unterschiedlich sein');
+    if(isNaN(amt)||amt<=0) return alert('Bitte einen positiven Betrag eingeben');
+    addTransaction(from,to,amt);
+  }catch(e){ alert(e.message); }
+});
+
+document.getElementById('clearMempool').addEventListener('click', ()=>{ state.mempool=[]; render(); log('Mempool geleert');});
+document.getElementById('startMining').addEventListener('click', ()=>startMiningRace());
+document.getElementById('stopMining').addEventListener('click', ()=>stopMining());
+document.getElementById('mineOne').addEventListener('click', ()=>mineOneBlock());
+document.getElementById('autoMine5').addEventListener('click', ()=>autoMine(5));
+document.getElementById('difficulty').addEventListener('change', e=>{ DIFFICULTY=parseInt(e.target.value)||DIFFICULTY; log('Schwierigkeit gesetzt auf '+DIFFICULTY);});
+document.getElementById('txLimit').addEventListener('change', e=>{ BLOCK_TX_LIMIT=parseInt(e.target.value)||BLOCK_TX_LIMIT; log('Block-Transaktionslimit gesetzt auf '+BLOCK_TX_LIMIT);});
+
+window.sim={state, addTransaction, mineOneBlock, startMiningRace, stopMining, autoMine};
+</script>
 </body>
 </html>
