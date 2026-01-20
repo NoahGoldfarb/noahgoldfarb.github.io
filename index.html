@@ -818,6 +818,13 @@
                 cell.title = `${dateStr}: ${count} ${count === 1 ? 'Übung' : 'Übungen'}`;
                 
                 heatmap.appendChild(cell);
+                function toLocalDateString(date) {
+                    const y = date.getFullYear();
+                    const m = String(date.getMonth() + 1).padStart(2, '0');
+                    const d = String(date.getDate()).padStart(2, '0');
+                    return `${y}-${m}-${d}`;
+                }
+
 
                 const month = date.toLocaleDateString('de-DE', { month: 'short' });
                 if (month !== currentMonth && date.getDate() <= 7) {
