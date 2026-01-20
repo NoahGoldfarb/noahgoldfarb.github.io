@@ -781,7 +781,7 @@
             renderDaySelector();
         }
 
-       function renderHeatmap() {
+function renderHeatmap() {
     const heatmap = document.getElementById('heatmap');
     const monthLabels = document.getElementById('monthLabels');
 
@@ -791,26 +791,19 @@
     const today = new Date();
     const totalDays = 364;
 
-    // Start date (364 days ago)
+    // Start date 364 days ago
     const startDate = new Date(today);
-    startDate.setDate(startDate.getDate() - totalDays);
+    startDate.setDate(today.getDate() - totalDays);
 
-    // Align start date to Monday
-    while (startDate.getDay() !== 1) {
-        startDate.setDate(startDate.getDate() - 1);
-    }
-
-    let lastMonth = null;
-    let weekIndex = 0;
+    let currentMonth = '';
 
     for (let i = 0; i <= totalDays; i++) {
         const date = new Date(startDate);
         date.setDate(startDate.getDate() + i);
-
         const dateStr = date.toISOString().split('T')[0];
         const count = workoutData[dateStr] || 0;
 
-        // Create heatmap cell
+        // Heatmap cell
         const cell = document.createElement('div');
         cell.className = 'heatmap-cell';
 
@@ -825,44 +818,48 @@
 
         heatmap.appendChild(cell);
 
-        // Month labels (only on Mondays)
-        if (date.getDay() === 1) {
-            const month = date.toLocaleDateString('de-DE', { month: 'short' });
-
-            if (month !== lastMonth) {
-                const label = document.createElement('div');
-                label.textContent = month;
-
-                // Position label based on week index
-                label.style.position = 'absolute';
-                label.style.left = `${weekIndex * 15}px`;
-
-                monthLabels.appendChild(label);
-                lastMonth = month;
-            }
-
-            weekIndex++;
+        // Add month label on first day of month
+        const month = date.toLocaleDateString('de-DE', { month: 'short' });
+        if (month !== currentMonth && date.getDate() <= 7) {
+            const label = document.createElement('div');
+            label.textContent = month;
+            monthLabels.appendChild(label);
+            currentMonth = month;
         }
     }
 
-    // ---- Stats ----
+    // Stats
     const trainedDays = Object.keys(workoutData).length;
     document.getElementById('totalDays').textContent = trainedDays;
 
     // Current streak
     let currentStreak = 0;
     let checkDate = new Date(today);
-
     while (true) {
         const dateStr = checkDate.toISOString().split('T')[0];
         if (workoutData[dateStr]) {
             currentStreak++;
             checkDate.setDate(checkDate.getDate() - 1);
-        } else {
-            break;
-        }
+        } else break;
     }
     document.getElementById('currentStreak').textContent = currentStreak;
+
+    // Longest streak
+    let longestStreak = 0;
+    let tempStreak = 0;
+    for (let i = 0; i <= totalDays; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+        const dateStr = date.toISOString().split('T')[0];
+
+        if (workoutData[dateStr]) {
+            tempStreak++;
+            longestStreak = Math.max(longestStreak, tempStreak);
+        } else tempStreak = 0;
+    }
+    document.getElementById('longestStreak').textContent = longestStreak;
+}
+
 
     // Longest streak
     let longestStreak = 0;
