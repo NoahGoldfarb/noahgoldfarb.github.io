@@ -971,7 +971,6 @@ function saveWorkout(workout) {
             const weight = parseFloat(document.getElementById('logWeight').value);
             const reps = parseInt(document.getElementById('logReps').value);
 
-            if (weight && reps) {
                 const exercise = workoutPlan.schedule[currentDay].exercises[currentExerciseIndex];
                 const workout = {
                     exercise: exercise.name,
@@ -979,7 +978,6 @@ function saveWorkout(workout) {
                     reps: reps,
                     sets: exercise.sets,
                     timestamp: Date.now()
-                };
 
                 saveWorkout(workout);
                 localStorage.setItem('workoutData', JSON.stringify(workoutData));
