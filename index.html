@@ -943,57 +943,56 @@ function saveWorkout(workout) {
             document.getElementById('progressFill').style.width = progress + '%';
         }
 
-        function showCurrentExercise() {
-            const exercises = workoutPlan.schedule[currentDay].exercises;
-            
-            if (currentExerciseIndex >= exercises.length) {
-                showComplete();
-                return;
-            }
-
-            const exercise = exercises[currentExerciseIndex];
-
-            document.getElementById('restTimer').classList.add('hidden');
-            document.getElementById('exerciseCard').classList.remove('hidden');
-            document.getElementById('completeCard').classList.add('hidden');
-
-            document.getElementById('currentExerciseName').innerHTML = getExerciseLink(exercise.name);
-            document.getElementById('currentExerciseDetails').textContent = 
-                `${exercise.sets} Sätze × ${exercise.reps} Wiederholungen`;
-            
-            document.getElementById('logWeight').value = '';
-            document.getElementById('logReps').value = '';
-            
-            renderExerciseList();
-        }
-
-        function nextExercise() {
-            const weight = parseFloat(document.getElementById('logWeight').value);
-            const reps = parseInt(document.getElementById('logReps').value);
-
-                const exercise = workoutPlan.schedule[currentDay].exercises[currentExerciseIndex];
-                const workout = {
-                    exercise: exercise.name,
-                    weight: weight,
-                    reps: reps,
-                    sets: exercise.sets,
-                    timestamp: Date.now()
-                };
-
-                saveWorkout(workout);
-                localStorage.setItem('workoutData', JSON.stringify(workoutData));
+function showCurrentExercise() {
+    const exercises = workoutPlan.schedule[currentDay].exercises;
     
+    if (currentExerciseIndex >= exercises.length) {
+        showComplete();
+        return;
+    }
 
-            completedExercises.push(currentExerciseIndex);
-            currentExerciseIndex++;
+    const exercise = exercises[currentExerciseIndex];
 
-            const exercises = workoutPlan.schedule[currentDay].exercises;
-            if (currentExerciseIndex >= exercises.length) {
-                showComplete();
-            } else {
-                startRestTimer();
-            }
-        }
+    document.getElementById('restTimer').classList.add('hidden');
+    document.getElementById('exerciseCard').classList.remove('hidden');
+    document.getElementById('completeCard').classList.add('hidden');
+
+    document.getElementById('currentExerciseName').innerHTML = getExerciseLink(exercise.name);
+    document.getElementById('currentExerciseDetails').textContent = 
+        `${exercise.sets} Sätze × ${exercise.reps} Wiederholungen`;
+    
+    document.getElementById('logWeight').value = '';
+    document.getElementById('logReps').value = '';
+    
+    renderExerciseList();
+}
+
+function nextExercise() {
+    const weight = parseFloat(document.getElementById('logWeight').value);
+    const reps = parseInt(document.getElementById('logReps').value);
+
+    const exercise = workoutPlan.schedule[currentDay].exercises[currentExerciseIndex];
+    const workout = {
+        exercise: exercise.name,
+        weight: weight,
+        reps: reps,
+        sets: exercise.sets,
+        timestamp: Date.now()
+    };
+
+    saveWorkout(workout);
+    localStorage.setItem('workoutData', JSON.stringify(workoutData));
+
+    completedExercises.push(currentExerciseIndex);
+    currentExerciseIndex++;
+
+    const exercises = workoutPlan.schedule[currentDay].exercises;
+    if (currentExerciseIndex >= exercises.length) {
+        showComplete();
+    } else {
+        startRestTimer();
+    }
+}
 
         function skipExercise() {
             completedExercises.push(currentExerciseIndex);
