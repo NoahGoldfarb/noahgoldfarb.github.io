@@ -777,7 +777,7 @@
             renderDaySelector();
         }
 
-function renderHeatmap() {
+        function renderHeatmap() {
             const heatmap = document.getElementById('heatmap');
             const monthLabels = document.getElementById('monthLabels');
             heatmap.innerHTML = '';
@@ -788,6 +788,7 @@ function renderHeatmap() {
             const startDate = new Date(today);
             startDate.setDate(startDate.getDate() - days);
 
+            const cells = [];
             let currentMonth = '';
             const monthPositions = [];
 
@@ -812,27 +813,51 @@ function renderHeatmap() {
                 heatmap.appendChild(cell);
 
                 const month = date.toLocaleDateString('de-DE', { month: 'short' });
-                const dayOfWeek = date.getDay();
-                
-                // Track month changes at the start of a week column (Sunday = 0)
-                if (month !== currentMonth && dayOfWeek === 0) {
+                if (month !== currentMonth && date.getDate() <= 7) {
                     currentMonth = month;
-                    const weekIndex = Math.floor(i / 7);
-                    monthPositions.push({ month, weekIndex });
+                    monthPositions.push({ month, index: i });
                 }
             }
 
-            // Create month labels based on week positions
-            const totalWeeks = Math.ceil(days / 7);
-            for (let week = 0; week < totalWeeks; week++) {
-                const monthPos = monthPositions.find(m => m.weekIndex === week);
+            monthPositions.forEach(pos => {
                 const label = document.createElement('div');
-                label.textContent = monthPos ? monthPos.month : '';
-                label.style.width = '15px';
+                label.textContent = pos.month;
                 monthLabels.appendChild(label);
-            }
+            });
 
-    
+            const totalDays = Object.keys(workoutData).length;
+            document.getElementById('totalDays').textContent = totalDays;
+
+            let currentStreak = 0;
+            let checkDate = new Date(today);
+            while (true) {
+                const dateStr = checkDate.toISOString().split('T')[0];
+                if (workoutData[dateStr]) {
+                    currentStreak++;
+                    checkDate.setDate(checkDate.getDate() - 1);
+                } else {
+                    break;
+                }
+            }
+            document.getElementById('currentStreak').textContent = currentStreak;
+
+            let longestStreak = 0;
+            let tempStreak = 0;
+            for (let i = 0; i <= days; i++) {
+                const date = new Date(startDate);
+                date.setDate(date.getDate() + i);
+                const dateStr = date.toISOString().split('T')[0];
+                
+                if (workoutData[dateStr]) {
+                    tempStreak++;
+                    longestStreak = Math.max(longestStreak, tempStreak);
+                } else {
+                    tempStreak = 0;
+                }
+            }
+            document.getElementById('longestStreak').textContent = longestStreak;
+        }
+
         function renderDaySelector() {
             const daySelector = document.getElementById('daySelector');
             daySelector.innerHTML = '';
