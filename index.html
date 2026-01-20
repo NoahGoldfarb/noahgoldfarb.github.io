@@ -1076,15 +1076,21 @@ function renderHeatmap() {
             renderEditForm();
         }
 
-        function renderEditForm() {
+function renderEditForm() {
             const editContent = document.getElementById('editContent');
-            let html = '';
+            let html = '<div id="days-container">';
 
-            Object.keys(workoutPlan.schedule).forEach(day => {
+            Object.keys(workoutPlan.schedule).forEach((day, dayIdx) => {
                 const workout = workoutPlan.schedule[day];
                 html += `
-                    <div class="edit-day-card">
-                        <h3>${day}</h3>
+                    <div class="edit-day-card" data-day-index="${dayIdx}">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <div style="flex: 1;">
+                                <label class="label">Tag Name</label>
+                                <input type="text" class="day-name" data-original-day="${day}" value="${day}">
+                            </div>
+                            <button class="small danger" onclick="removeDay('${day}')" style="margin-left: 10px; margin-top: 20px;">🗑️ Tag löschen</button>
+                        </div>
                         <div>
                             <label class="label">Workout Name</label>
                             <input type="text" class="workout-name" data-day="${day}" value="${workout.name}">
@@ -1109,9 +1115,11 @@ function renderHeatmap() {
                 `;
             });
 
+            html += '</div>';
+            html += '<button class="small success" onclick="addNewDay()" style="width: 100%; margin-top: 20px;">➕ Neuen Tag hinzufügen</button>';
+
             editContent.innerHTML = html;
         }
-
         function addExercise(day) {
             const container = document.querySelector(`.exercises-list[data-day="${day}"]`);
             const newExercise = document.createElement('div');
