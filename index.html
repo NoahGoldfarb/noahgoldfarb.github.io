@@ -1051,8 +1051,20 @@
             clearInterval(timerInterval);
             showCurrentExercise();
         }
+        function markWorkoutDay() {
+        const today = new Date();
+        const key = toLocalDateString(today);
+    
+        if (!workoutData[key]) {
+            workoutData[key] = 0;
+        }
+        workoutData[key]++;
+    
+        localStorage.setItem('workoutData', JSON.stringify(workoutData));
+        }
 
         function showComplete() {
+                markWorkoutDay(); // ✅ ADD THIS
             clearInterval(timerInterval);
             
             document.getElementById('exerciseCard').classList.add('hidden');
