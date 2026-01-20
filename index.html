@@ -430,8 +430,6 @@
             <button onclick="login()">Anmelden</button>
             <div id="authError" class="error hidden"></div>
         </div>
-        <button onclick="addTestWorkout()">Test - Add Workout for Today</button>
-
         <!-- Day Selection Screen -->
         <div id="dayScreen" class="hidden card">
             <h1>🏋️ Workout Plan</h1>
@@ -726,17 +724,7 @@
             }
         }
 
-        // TEST: Add a workout for today
-function addTestWorkout() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset to midnight
-    const dateStr = today.toISOString().split('T')[0];
-    console.log('Adding workout for:', dateStr); // Debug
-    workoutData[dateStr] = 2;
-    localStorage.setItem('workoutData', JSON.stringify(workoutData));
-    sessionStorage.setItem('workoutPlanLogin', 'true');
-    showDaySelection();
-}
+
 
         function loadWorkoutData() {
             if (isOnline) {
