@@ -341,8 +341,9 @@
         }
 
 .month-labels {
-    display: flex;
-    gap: 0px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 15px);
+    gap: 3px;
     margin-bottom: 5px;
     font-size: 12px;
     color: #666;
@@ -788,8 +789,12 @@ function renderHeatmap() {
     const startDate = new Date(today);
     startDate.setDate(startDate.getDate() - days);
 
+    // Adjust start date to Monday
+    const dayOfWeek = (startDate.getDay() + 6) % 7;
+    startDate.setDate(startDate.getDate() - dayOfWeek);
+
     let currentMonth = '';
-    const monthPositions = [];
+    const monthMap = new Map();
 
     for (let i = 0; i <= days; i++) {
         const date = new Date(startDate);
@@ -812,23 +817,21 @@ function renderHeatmap() {
         heatmap.appendChild(cell);
 
         const month = date.toLocaleDateString('de-DE', { month: 'short' });
-        const dayOfWeek = (date.getDay() + 6) % 7; // Convert to Monday = 0
+        const weekIndex = Math.floor(i / 7);
         
-        // Track month changes at the start of a week column (Monday)
-        if (month !== currentMonth && dayOfWeek === 0) {
+        if (month !== currentMonth && !monthMap.has(weekIndex)) {
             currentMonth = month;
-            const weekIndex = Math.floor(i / 7);
-            monthPositions.push({ month, weekIndex });
+            monthMap.set(weekIndex, month);
         }
     }
 
-    // Create month labels based on week positions
-    const totalWeeks = Math.ceil(days / 7);
+    // Create month labels aligned with week columns
+    const totalWeeks = Math.ceil((days + 1) / 7);
     for (let week = 0; week < totalWeeks; week++) {
-        const monthPos = monthPositions.find(m => m.weekIndex === week);
         const label = document.createElement('div');
-        label.textContent = monthPos ? monthPos.month : '';
+        label.textContent = monthMap.get(week) || '';
         label.style.width = '15px';
+        label.style.textAlign = 'left';
         monthLabels.appendChild(label);
     }
 
