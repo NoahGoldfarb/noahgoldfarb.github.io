@@ -789,8 +789,7 @@ function renderHeatmap() {
     const dayOfWeek = (startDate.getDay() + 6) % 7;
     startDate.setDate(startDate.getDate() - dayOfWeek);
 
-    let currentMonth = '';
-    const monthPositions = [];
+    const monthPositions = new Map();
 
     for (let i = 0; i <= days; i++) {
         const date = new Date(startDate);
@@ -814,12 +813,10 @@ function renderHeatmap() {
 
         const month = date.toLocaleDateString('de-DE', { month: 'short' });
         const weekIndex = Math.floor(i / 7);
-        const dayInWeek = i % 7;
         
-        // Mark first occurrence of each month at start of week
-        if (month !== currentMonth && dayInWeek === 0) {
-            currentMonth = month;
-            monthPositions.push({ week: weekIndex, month: month });
+        // Store first week where each month appears
+        if (!monthPositions.has(month)) {
+            monthPositions.set(month, weekIndex);
         }
     }
 
@@ -829,10 +826,13 @@ function renderHeatmap() {
     monthLabels.style.gridTemplateColumns = `repeat(${totalWeeks}, 15px)`;
     monthLabels.style.gap = '3px';
     
+    // Convert map to array for easier lookup
+    const monthArray = Array.from(monthPositions.entries());
+    
     for (let week = 0; week < totalWeeks; week++) {
         const label = document.createElement('div');
-        const monthData = monthPositions.find(m => m.week === week);
-        label.textContent = monthData ? monthData.month : '';
+        const monthEntry = monthArray.find(([month, weekIdx]) => weekIdx === week);
+        label.textContent = monthEntry ? monthEntry[0] : '';
         monthLabels.appendChild(label);
     }
 
