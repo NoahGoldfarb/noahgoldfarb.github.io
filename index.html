@@ -678,27 +678,22 @@
         }
 
         // Save workout (online or offline)
-        function saveWorkout(workout) {
-            if (isOnline) {
-                // Save directly to Firebase
-                database.ref('workouts').push(workout).catch(error => {
-                    console.error('Save failed, adding to pending sync:', error);
-                    addToPendingSync(workout);
-                });
-            } else {
-                // Save to pending sync
-                addToPendingSync(workout);
-            }
-            
-            // Update local data immediately
-            const date = new Date(startDate);
-            date.setDate(startDate.getDate() + i);
-            const dateStr = date.toISOString().split('T')[0];
-            if (!workoutData[dateStr]) {
-                workoutData[dateStr] = 0;
-            }
-            workoutData[dateStr]++;
-        }
+function saveWorkout(workout) {
+    if (isOnline) {
+        database.ref('workouts').push(workout).catch(() => {
+            addToPendingSync(workout);
+        });
+    } else {
+        addToPendingSync(workout);
+    }
+
+    // ✅ FIX: correct date handling
+    const dateStr = new Date().toISOString().split('T')[0];
+    workoutData[dateStr] = (workoutData[dateStr] || 0) + 1;
+
+    localStorage.setItem('workoutData', JSON.stringify(workoutData));
+}
+
 
         function addToPendingSync(workout) {
             pendingSync.push(workout);
