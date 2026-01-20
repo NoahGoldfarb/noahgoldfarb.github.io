@@ -788,6 +788,12 @@
             const days = 364;
             const startDate = new Date(today);
             startDate.setDate(startDate.getDate() - days);
+            
+            // align to Monday (ISO week)
+            const day = startDate.getDay(); // 0 = Sunday
+            const diff = (day === 0 ? -6 : 1) - day;
+            startDate.setDate(startDate.getDate() + diff);
+
 
             const cells = [];
             let currentMonth = '';
