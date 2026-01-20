@@ -341,9 +341,6 @@
         }
 
 .month-labels {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, 15px);
-    gap: 3px;
     margin-bottom: 5px;
     font-size: 12px;
     color: #666;
@@ -777,7 +774,6 @@
             renderHeatmap();
             renderDaySelector();
         }
-
 function renderHeatmap() {
     const heatmap = document.getElementById('heatmap');
     const monthLabels = document.getElementById('monthLabels');
@@ -794,7 +790,7 @@ function renderHeatmap() {
     startDate.setDate(startDate.getDate() - dayOfWeek);
 
     let currentMonth = '';
-    const monthMap = new Map();
+    const monthPositions = [];
 
     for (let i = 0; i <= days; i++) {
         const date = new Date(startDate);
@@ -818,20 +814,25 @@ function renderHeatmap() {
 
         const month = date.toLocaleDateString('de-DE', { month: 'short' });
         const weekIndex = Math.floor(i / 7);
+        const dayInWeek = i % 7;
         
-        if (month !== currentMonth && !monthMap.has(weekIndex)) {
+        // Mark first occurrence of each month at start of week
+        if (month !== currentMonth && dayInWeek === 0) {
             currentMonth = month;
-            monthMap.set(weekIndex, month);
+            monthPositions.push({ week: weekIndex, month: month });
         }
     }
 
-    // Create month labels aligned with week columns
+    // Create month labels with proper spacing
     const totalWeeks = Math.ceil((days + 1) / 7);
+    monthLabels.style.display = 'grid';
+    monthLabels.style.gridTemplateColumns = `repeat(${totalWeeks}, 15px)`;
+    monthLabels.style.gap = '3px';
+    
     for (let week = 0; week < totalWeeks; week++) {
         const label = document.createElement('div');
-        label.textContent = monthMap.get(week) || '';
-        label.style.width = '15px';
-        label.style.textAlign = 'left';
+        const monthData = monthPositions.find(m => m.week === week);
+        label.textContent = monthData ? monthData.month : '';
         monthLabels.appendChild(label);
     }
 
