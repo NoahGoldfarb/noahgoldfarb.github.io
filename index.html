@@ -793,45 +793,39 @@ function renderHeatmap() {
     heatmap.innerHTML = '';
     monthLabels.innerHTML = '';
 
-    // ===== FULL CALENDAR YEAR =====
-    const year = 2026;
-    const startDate = new Date(year, 0, 1);   // Jan 1, 2026
-    const endDate   = new Date(year, 11, 31); // Dec 31, 2026
+    const YEAR = 2026;
 
-    // Align grid to Monday
-    const startDay = (startDate.getDay() + 6) % 7; // 0 = Monday
+    const startDate = new Date(YEAR, 0, 1);   // Jan 1, 2026
+    const endDate   = new Date(YEAR, 11, 31); // Dec 31, 2026
+
+    // Align start to Monday
+    const startDay = (startDate.getDay() + 6) % 7;
     const adjustedStart = new Date(startDate);
     adjustedStart.setDate(adjustedStart.getDate() - startDay);
 
     const totalDays =
-        Math.round((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
-
-    const totalCells = totalDays + startDay;
-    const totalWeeks = Math.ceil(totalCells / 7);
+        Math.round((endDate - adjustedStart) / (1000 * 60 * 60 * 24)) + 1;
+    const totalWeeks = Math.ceil(totalDays / 7);
 
     const monthPositions = new Map();
     let lastMonth = '';
-    let cellIndex = 0;
 
-    // ===== PADDING BEFORE JAN 1 =====
-    for (let i = 0; i < startDay; i++) {
+    for (let i = 0; i < totalDays; i++) {
+        const date = new Date(adjustedStart);
+        date.setDate(date.getDate() + i);
+
         const cell = document.createElement('div');
         cell.className = 'heatmap-cell';
-        cell.style.opacity = '0';
-        heatmap.appendChild(cell);
-        cellIndex++;
-    }
 
-    // ===== ACTUAL DAYS OF THE YEAR =====
-    for (let i = 0; i < totalDays; i++) {
-        const date = new Date(startDate);
-        date.setDate(startDate.getDate() + i);
+        // Outside 2026 → invisible padding
+        if (date < startDate || date > endDate) {
+            cell.style.opacity = '0';
+            heatmap.appendChild(cell);
+            continue;
+        }
 
         const dateStr = date.toISOString().split('T')[0];
         const count = workoutData[dateStr] || 0;
-
-        const cell = document.createElement('div');
-        cell.className = 'heatmap-cell';
 
         let level = 0;
         if (count > 0) level = 1;
@@ -840,24 +834,19 @@ function renderHeatmap() {
         if (count >= 6) level = 4;
 
         cell.dataset.level = level;
-        cell.title = `${dateStr}: ${count} Workouts`;
-
+        cell.title = `${dateStr}: ${count} ${count === 1 ? 'Workout' : 'Workouts'}`;
         heatmap.appendChild(cell);
 
         const month = date.toLocaleDateString('de-DE', { month: 'short' });
-        const weekIndex = Math.floor(cellIndex / 7);
+        const weekIndex = Math.floor(i / 7);
 
         if (month !== lastMonth) {
             lastMonth = month;
-            if (!monthPositions.has(weekIndex)) {
-                monthPositions.set(weekIndex, month);
-            }
+            monthPositions.set(weekIndex, month);
         }
-
-        cellIndex++;
     }
 
-    // ===== MONTH LABELS =====
+    // Month labels
     for (let w = 0; w < totalWeeks; w++) {
         const label = document.createElement('div');
         label.textContent = monthPositions.get(w) || '';
@@ -868,49 +857,41 @@ function renderHeatmap() {
     monthLabels.style.gridTemplateColumns = `repeat(${totalWeeks}, 15px)`;
     monthLabels.style.gap = '3px';
 
-    // ===== STATS =====
-    const workoutDates = Object.keys(workoutData).sort();
+    // Stats
+    const dates2026 = Object.keys(workoutData).filter(d =>
+        d.startsWith('2026')
+    );
 
-    // Total days trained (within year)
-    const totalDaysTrained = workoutDates.filter(d =>
-        d >= `${year}-01-01` && d <= `${year}-12-31`
-    ).length;
-    document.getElementById('totalDays').textContent = totalDaysTrained;
+    document.getElementById('totalDays').textContent = dates2026.length;
 
-    // Current streak (up to today)
+    // Current streak (only inside 2026)
     let currentStreak = 0;
-    let checkDate = new Date();
-    checkDate.setHours(0, 0, 0, 0);
+    let d = new Date(YEAR, 11, 31);
 
     while (true) {
-        const dateStr = checkDate.toISOString().split('T')[0];
-        if (workoutData[dateStr]) {
+        const ds = d.toISOString().split('T')[0];
+        if (workoutData[ds]) {
             currentStreak++;
-            checkDate.setDate(checkDate.getDate() - 1);
-        } else {
-            break;
-        }
+            d.setDate(d.getDate() - 1);
+        } else break;
     }
+
     document.getElementById('currentStreak').textContent = currentStreak;
 
-    // Longest streak (within year)
-    let longestStreak = 0;
-    let tempStreak = 0;
-
-    for (let i = 0; i < totalDays; i++) {
-        const date = new Date(startDate);
-        date.setDate(startDate.getDate() + i);
-        const dateStr = date.toISOString().split('T')[0];
-
-        if (workoutData[dateStr]) {
-            tempStreak++;
-            longestStreak = Math.max(longestStreak, tempStreak);
-        } else {
-            tempStreak = 0;
-        }
+    // Longest streak
+    let longest = 0, temp = 0;
+    for (let i = 0; i <= 364; i++) {
+        const d = new Date(YEAR, 0, 1 + i);
+        const ds = d.toISOString().split('T')[0];
+        if (workoutData[ds]) {
+            temp++;
+            longest = Math.max(longest, temp);
+        } else temp = 0;
     }
-    document.getElementById('longestStreak').textContent = longestStreak;
+
+    document.getElementById('longestStreak').textContent = longest;
 }
+
 
 
         function renderDaySelector() {
