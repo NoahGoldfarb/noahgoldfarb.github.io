@@ -340,13 +340,17 @@
             border-radius: 2px;
         }
 
-        .month-labels {
-            display: flex;
-            gap: 60px;
-            margin-bottom: 5px;
-            font-size: 12px;
-            color: #666;
-        }
+.month-labels {
+    position: relative;
+    height: 16px;
+    margin-bottom: 5px;
+}
+.month-labels div {
+    position: absolute;
+    font-size: 12px;
+    color: #666;
+}
+
 
         .edit-day-card {
             background: #f8f9fa;
