@@ -341,16 +341,12 @@
         }
 
         .month-labels {
-            position: relative;
-            height: 16px;
+            display: flex;
+            gap: 60px;
             margin-bottom: 5px;
-        }
-        .month-labels div {
-            position: absolute;
             font-size: 12px;
             color: #666;
         }
-
 
         .edit-day-card {
             background: #f8f9fa;
@@ -678,22 +674,26 @@
         }
 
         // Save workout (online or offline)
-function saveWorkout(workout) {
-    if (isOnline) {
-        database.ref('workouts').push(workout).catch(() => {
-            addToPendingSync(workout);
-        });
-    } else {
-        addToPendingSync(workout);
-    }
-
-    // ✅ FIX: correct date handling
-    const dateStr = new Date().toISOString().split('T')[0];
-    workoutData[dateStr] = (workoutData[dateStr] || 0) + 1;
-
-    localStorage.setItem('workoutData', JSON.stringify(workoutData));
-}
-
+        function saveWorkout(workout) {
+            if (isOnline) {
+                // Save directly to Firebase
+                database.ref('workouts').push(workout).catch(error => {
+                    console.error('Save failed, adding to pending sync:', error);
+                    addToPendingSync(workout);
+                });
+            } else {
+                // Save to pending sync
+                addToPendingSync(workout);
+            }
+            
+            // Update local data immediately
+            const date = new Date(workout.timestamp);
+            const dateStr = date.toISOString().split('T')[0];
+            if (!workoutData[dateStr]) {
+                workoutData[dateStr] = 0;
+            }
+            workoutData[dateStr]++;
+        }
 
         function addToPendingSync(workout) {
             pendingSync.push(workout);
@@ -777,109 +777,86 @@ function saveWorkout(workout) {
             renderDaySelector();
         }
 
-       function renderHeatmap() {
-    const heatmap = document.getElementById('heatmap');
-    const monthLabels = document.getElementById('monthLabels');
+        function renderHeatmap() {
+            const heatmap = document.getElementById('heatmap');
+            const monthLabels = document.getElementById('monthLabels');
+            heatmap.innerHTML = '';
+            monthLabels.innerHTML = '';
 
-    heatmap.innerHTML = '';
-    monthLabels.innerHTML = '';
+            const today = new Date();
+            const days = 364;
+            const startDate = new Date(today);
+            startDate.setDate(startDate.getDate() - days);
 
-    const today = new Date();
-    const totalDays = 364;
+            const cells = [];
+            let currentMonth = '';
+            const monthPositions = [];
 
-    // Start date (364 days ago)
-    const startDate = new Date(today);
-    startDate.setDate(startDate.getDate() - totalDays);
+            for (let i = 0; i <= days; i++) {
+                const date = new Date(startDate);
+                date.setDate(date.getDate() + i);
+                const dateStr = date.toISOString().split('T')[0];
+                const count = workoutData[dateStr] || 0;
 
-    // Align start date to Monday
-    while (startDate.getDay() !== 1) {
-        startDate.setDate(startDate.getDate() - 1);
-    }
+                const cell = document.createElement('div');
+                cell.className = 'heatmap-cell';
+                
+                let level = 0;
+                if (count > 0) level = 1;
+                if (count >= 2) level = 2;
+                if (count >= 4) level = 3;
+                if (count >= 6) level = 4;
+                
+                cell.setAttribute('data-level', level);
+                cell.title = `${dateStr}: ${count} ${count === 1 ? 'Übung' : 'Übungen'}`;
+                
+                heatmap.appendChild(cell);
 
-    let lastMonth = null;
-    let weekIndex = 0;
-
-    for (let i = 0; i <= totalDays; i++) {
-        const date = new Date(startDate);
-        date.setDate(startDate.getDate() + i);
-
-        const dateStr = date.toISOString().split('T')[0];
-        const count = workoutData[dateStr] || 0;
-
-        // Create heatmap cell
-        const cell = document.createElement('div');
-        cell.className = 'heatmap-cell';
-
-        let level = 0;
-        if (count > 0) level = 1;
-        if (count >= 2) level = 2;
-        if (count >= 4) level = 3;
-        if (count >= 6) level = 4;
-
-        cell.dataset.level = level;
-        cell.title = `${dateStr}: ${count} ${count === 1 ? 'Einheit' : 'Einheiten'}`;
-
-        heatmap.appendChild(cell);
-
-        // Month labels (only on Mondays)
-        if (date.getDay() === 1) {
-            const month = date.toLocaleDateString('de-DE', { month: 'short' });
-
-            if (month !== lastMonth) {
-                const label = document.createElement('div');
-                label.textContent = month;
-
-                // Position label based on week index
-                label.style.position = 'absolute';
-                label.style.left = `${weekIndex * 15}px`;
-
-                monthLabels.appendChild(label);
-                lastMonth = month;
+                const month = date.toLocaleDateString('de-DE', { month: 'short' });
+                if (month !== currentMonth && date.getDate() <= 7) {
+                    currentMonth = month;
+                    monthPositions.push({ month, index: i });
+                }
             }
 
-            weekIndex++;
+            monthPositions.forEach(pos => {
+                const label = document.createElement('div');
+                label.textContent = pos.month;
+                monthLabels.appendChild(label);
+            });
+
+            const totalDays = Object.keys(workoutData).length;
+            document.getElementById('totalDays').textContent = totalDays;
+
+            let currentStreak = 0;
+            let checkDate = new Date(today);
+            while (true) {
+                const dateStr = checkDate.toISOString().split('T')[0];
+                if (workoutData[dateStr]) {
+                    currentStreak++;
+                    checkDate.setDate(checkDate.getDate() - 1);
+                } else {
+                    break;
+                }
+            }
+            document.getElementById('currentStreak').textContent = currentStreak;
+
+            let longestStreak = 0;
+            let tempStreak = 0;
+            for (let i = 0; i <= days; i++) {
+                const date = new Date(startDate);
+                date.setDate(date.getDate() + i);
+                const dateStr = date.toISOString().split('T')[0];
+                
+                if (workoutData[dateStr]) {
+                    tempStreak++;
+                    longestStreak = Math.max(longestStreak, tempStreak);
+                } else {
+                    tempStreak = 0;
+                }
+            }
+            document.getElementById('longestStreak').textContent = longestStreak;
         }
-    }
-
-    // ---- Stats ----
-    const trainedDays = Object.keys(workoutData).length;
-    document.getElementById('totalDays').textContent = trainedDays;
-
-    // Current streak
-    let currentStreak = 0;
-    let checkDate = new Date(today);
-
-    while (true) {
-        const dateStr = checkDate.toISOString().split('T')[0];
-        if (workoutData[dateStr]) {
-            currentStreak++;
-            checkDate.setDate(checkDate.getDate() - 1);
-        } else {
-            break;
-        }
-    }
-    document.getElementById('currentStreak').textContent = currentStreak;
-
-    // Longest streak
-    let longestStreak = 0;
-    let tempStreak = 0;
-
-    for (let i = 0; i <= totalDays; i++) {
-        const date = new Date(startDate);
-        date.setDate(startDate.getDate() + i);
-        const dateStr = date.toISOString().split('T')[0];
-
-        if (workoutData[dateStr]) {
-            tempStreak++;
-            longestStreak = Math.max(longestStreak, tempStreak);
-        } else {
-            tempStreak = 0;
-        }
-    }
-
-    document.getElementById('longestStreak').textContent = longestStreak;
-}
-
 
         function renderDaySelector() {
             const daySelector = document.getElementById('daySelector');
@@ -943,56 +920,58 @@ function saveWorkout(workout) {
             document.getElementById('progressFill').style.width = progress + '%';
         }
 
-function showCurrentExercise() {
-    const exercises = workoutPlan.schedule[currentDay].exercises;
-    
-    if (currentExerciseIndex >= exercises.length) {
-        showComplete();
-        return;
-    }
+        function showCurrentExercise() {
+            const exercises = workoutPlan.schedule[currentDay].exercises;
+            
+            if (currentExerciseIndex >= exercises.length) {
+                showComplete();
+                return;
+            }
 
-    const exercise = exercises[currentExerciseIndex];
+            const exercise = exercises[currentExerciseIndex];
 
-    document.getElementById('restTimer').classList.add('hidden');
-    document.getElementById('exerciseCard').classList.remove('hidden');
-    document.getElementById('completeCard').classList.add('hidden');
+            document.getElementById('restTimer').classList.add('hidden');
+            document.getElementById('exerciseCard').classList.remove('hidden');
+            document.getElementById('completeCard').classList.add('hidden');
 
-    document.getElementById('currentExerciseName').innerHTML = getExerciseLink(exercise.name);
-    document.getElementById('currentExerciseDetails').textContent = 
-        `${exercise.sets} Sätze × ${exercise.reps} Wiederholungen`;
-    
-    document.getElementById('logWeight').value = '';
-    document.getElementById('logReps').value = '';
-    
-    renderExerciseList();
-}
+            document.getElementById('currentExerciseName').innerHTML = getExerciseLink(exercise.name);
+            document.getElementById('currentExerciseDetails').textContent = 
+                `${exercise.sets} Sätze × ${exercise.reps} Wiederholungen`;
+            
+            document.getElementById('logWeight').value = '';
+            document.getElementById('logReps').value = '';
+            
+            renderExerciseList();
+        }
 
-function nextExercise() {
-    const weight = parseFloat(document.getElementById('logWeight').value);
-    const reps = parseInt(document.getElementById('logReps').value);
+        function nextExercise() {
+            const weight = parseFloat(document.getElementById('logWeight').value);
+            const reps = parseInt(document.getElementById('logReps').value);
 
-    const exercise = workoutPlan.schedule[currentDay].exercises[currentExerciseIndex];
-    const workout = {
-        exercise: exercise.name,
-        weight: weight,
-        reps: reps,
-        sets: exercise.sets,
-        timestamp: Date.now()
-    };
+            if (weight && reps) {
+                const exercise = workoutPlan.schedule[currentDay].exercises[currentExerciseIndex];
+                const workout = {
+                    exercise: exercise.name,
+                    weight: weight,
+                    reps: reps,
+                    sets: exercise.sets,
+                    timestamp: Date.now()
+                };
 
-    saveWorkout(workout);
-    localStorage.setItem('workoutData', JSON.stringify(workoutData));
+                saveWorkout(workout);
+                localStorage.setItem('workoutData', JSON.stringify(workoutData));
+            }
 
-    completedExercises.push(currentExerciseIndex);
-    currentExerciseIndex++;
+            completedExercises.push(currentExerciseIndex);
+            currentExerciseIndex++;
 
-    const exercises = workoutPlan.schedule[currentDay].exercises;
-    if (currentExerciseIndex >= exercises.length) {
-        showComplete();
-    } else {
-        startRestTimer();
-    }
-}
+            const exercises = workoutPlan.schedule[currentDay].exercises;
+            if (currentExerciseIndex >= exercises.length) {
+                showComplete();
+            } else {
+                startRestTimer();
+            }
+        }
 
         function skipExercise() {
             completedExercises.push(currentExerciseIndex);
