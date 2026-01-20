@@ -774,7 +774,8 @@
             renderHeatmap();
             renderDaySelector();
         }
-function renderHeatmap() {
+
+        function renderHeatmap() {
     const heatmap = document.getElementById('heatmap');
     const monthLabels = document.getElementById('monthLabels');
     heatmap.innerHTML = '';
@@ -784,10 +785,6 @@ function renderHeatmap() {
     const days = 364;
     const startDate = new Date(today);
     startDate.setDate(startDate.getDate() - days);
-
-    // Adjust start date to Monday
-    const dayOfWeek = (startDate.getDay() + 6) % 7;
-    startDate.setDate(startDate.getDate() - dayOfWeek);
 
     const monthPositions = new Map();
 
