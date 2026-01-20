@@ -159,7 +159,7 @@
 
         .day-selector {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 10px;
             margin-bottom: 20px;
         }
@@ -503,7 +503,7 @@
                     </div>
                 </div>
 
-                <button onclick="nextExercise()" class="success">✓ Fertig & Weiter</button>
+                <button onclick="nextSet()" class="success">✓ Satz abgeschlossen</button>
                 <button onclick="skipExercise()" class="secondary">⏭️ Überspringen</button>
                 <button onclick="endWorkout()" class="danger">❌ Workout beenden</button>
             </div>
@@ -561,6 +561,7 @@
 
         let currentDay = null;
         let currentExerciseIndex = 0;
+        let currentSetNumber = 1;
         let completedExercises = [];
         let timerInterval = null;
         let remainingSeconds = 120;
@@ -884,6 +885,7 @@
         function startWorkout(day) {
             currentDay = day;
             currentExerciseIndex = 0;
+            currentSetNumber = 1;
             completedExercises = [];
 
             document.getElementById('dayScreen').classList.add('hidden');
@@ -936,7 +938,7 @@
 
             document.getElementById('currentExerciseName').innerHTML = getExerciseLink(exercise.name);
             document.getElementById('currentExerciseDetails').textContent = 
-                `${exercise.sets} Sätze × ${exercise.reps} Wiederholungen`;
+                `Satz ${currentSetNumber} von ${exercise.sets} (${exercise.reps} Wiederholungen)`;
             
             document.getElementById('logWeight').value = '';
             document.getElementById('logReps').value = '';
@@ -944,7 +946,7 @@
             renderExerciseList();
         }
 
-        function nextExercise() {
+        function nextSet() {
             const weight = parseFloat(document.getElementById('logWeight').value);
             const reps = parseInt(document.getElementById('logReps').value);
 
@@ -954,7 +956,8 @@
                     exercise: exercise.name,
                     weight: weight,
                     reps: reps,
-                    sets: exercise.sets,
+                    set: currentSetNumber,
+                    totalSets: exercise.sets,
                     timestamp: Date.now()
                 };
 
@@ -962,13 +965,23 @@
                 localStorage.setItem('workoutData', JSON.stringify(workoutData));
             }
 
-            completedExercises.push(currentExerciseIndex);
-            currentExerciseIndex++;
+            const exercise = workoutPlan.schedule[currentDay].exercises[currentExerciseIndex];
+            
+            if (currentSetNumber >= exercise.sets) {
+                // Move to next exercise
+                completedExercises.push(currentExerciseIndex);
+                currentExerciseIndex++;
+                currentSetNumber = 1;
 
-            const exercises = workoutPlan.schedule[currentDay].exercises;
-            if (currentExerciseIndex >= exercises.length) {
-                showComplete();
+                const exercises = workoutPlan.schedule[currentDay].exercises;
+                if (currentExerciseIndex >= exercises.length) {
+                    showComplete();
+                } else {
+                    startRestTimer();
+                }
             } else {
+                // Next set of same exercise
+                currentSetNumber++;
                 startRestTimer();
             }
         }
@@ -976,12 +989,13 @@
         function skipExercise() {
             completedExercises.push(currentExerciseIndex);
             currentExerciseIndex++;
+            currentSetNumber = 1;
 
             const exercises = workoutPlan.schedule[currentDay].exercises;
             if (currentExerciseIndex >= exercises.length) {
                 showComplete();
             } else {
-                startRestTimer();
+                showCurrentExercise();
             }
         }
 
@@ -1042,6 +1056,7 @@
             clearInterval(timerInterval);
             currentDay = null;
             currentExerciseIndex = 0;
+            currentSetNumber = 1;
             completedExercises = [];
             loadWorkoutData();
         }
