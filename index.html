@@ -725,6 +725,15 @@
             }
         }
 
+        // TEST: Add a workout for today
+function addTestWorkout() {
+    const today = new Date();
+    const dateStr = today.toISOString().split('T')[0];
+    workoutData[dateStr] = 2; // 2 exercises today
+    localStorage.setItem('workoutData', JSON.stringify(workoutData));
+    renderHeatmap();
+}
+
         function loadWorkoutData() {
             if (isOnline) {
                 database.ref('workouts').once('value', snapshot => {
