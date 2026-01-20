@@ -798,10 +798,30 @@ function renderHeatmap() {
     const days = 364;
     const startDate = new Date(today);
     startDate.setDate(startDate.getDate() - days);
+    
+    // Adjust to start on Monday
+    const startDay = (startDate.getDay() + 6) % 7; // 0 = Monday, 6 = Sunday
+    const adjustedStart = new Date(startDate);
+    adjustedStart.setDate(adjustedStart.getDate() - startDay);
 
     const monthPositions = new Map();
     let lastMonth = '';
+    let cellCount = 0;
 
+    // Calculate total cells needed (including padding)
+    const totalDays = days + 1 + startDay;
+    const totalWeeks = Math.ceil(totalDays / 7);
+
+    // Add padding cells for days before our start date
+    for (let i = 0; i < startDay; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'heatmap-cell';
+        cell.style.opacity = '0';
+        heatmap.appendChild(cell);
+        cellCount++;
+    }
+
+    // Add actual data cells
     for (let i = 0; i <= days; i++) {
         const date = new Date(startDate);
         date.setDate(date.getDate() + i);
@@ -821,20 +841,21 @@ function renderHeatmap() {
         cell.title = `${dateStr}: ${count} ${count === 1 ? 'Übung' : 'Übungen'}`;
         
         heatmap.appendChild(cell);
+        cellCount++;
 
         // Track month changes
         const month = date.toLocaleDateString('de-DE', { month: 'short' });
-        const weekIndex = Math.floor(i / 7);
+        const weekIndex = Math.floor(cellCount / 7);
         
         if (month !== lastMonth) {
             lastMonth = month;
-            monthPositions.set(weekIndex, month);
+            if (!monthPositions.has(weekIndex)) {
+                monthPositions.set(weekIndex, month);
+            }
         }
     }
 
     // Create month labels with proper spacing
-    const totalWeeks = Math.ceil((days + 1) / 7);
-    
     for (let week = 0; week < totalWeeks; week++) {
         const label = document.createElement('div');
         label.textContent = monthPositions.get(week) || '';
@@ -850,8 +871,8 @@ function renderHeatmap() {
     monthLabels.style.gap = '3px';
     monthLabels.style.marginBottom = '5px';
 
-    const totalDays = Object.keys(workoutData).length;
-    document.getElementById('totalDays').textContent = totalDays;
+    const totalDaysCount = Object.keys(workoutData).length;
+    document.getElementById('totalDays').textContent = totalDaysCount;
 
     let currentStreak = 0;
     let checkDate = new Date(today);
