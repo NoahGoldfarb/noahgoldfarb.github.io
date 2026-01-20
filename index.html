@@ -777,86 +777,93 @@
             renderDaySelector();
         }
 
-        function renderHeatmap() {
-            const heatmap = document.getElementById('heatmap');
-            const monthLabels = document.getElementById('monthLabels');
-            heatmap.innerHTML = '';
-            monthLabels.innerHTML = '';
+function renderHeatmap() {
+    const heatmap = document.getElementById('heatmap');
+    const monthLabels = document.getElementById('monthLabels');
+    heatmap.innerHTML = '';
+    monthLabels.innerHTML = '';
 
-            const today = new Date();
-            const days = 364;
-            const startDate = new Date(today);
-            startDate.setDate(startDate.getDate() - days);
+    const today = new Date();
+    const days = 364;
+    const startDate = new Date(today);
+    startDate.setDate(startDate.getDate() - days);
 
-            const cells = [];
-            let currentMonth = '';
-            const monthPositions = [];
+    let currentMonth = '';
+    const monthPositions = [];
 
-            for (let i = 0; i <= days; i++) {
-                const date = new Date(startDate);
-                date.setDate(date.getDate() + i);
-                const dateStr = date.toISOString().split('T')[0];
-                const count = workoutData[dateStr] || 0;
+    for (let i = 0; i <= days; i++) {
+        const date = new Date(startDate);
+        date.setDate(date.getDate() + i);
+        const dateStr = date.toISOString().split('T')[0];
+        const count = workoutData[dateStr] || 0;
 
-                const cell = document.createElement('div');
-                cell.className = 'heatmap-cell';
-                
-                let level = 0;
-                if (count > 0) level = 1;
-                if (count >= 2) level = 2;
-                if (count >= 4) level = 3;
-                if (count >= 6) level = 4;
-                
-                cell.setAttribute('data-level', level);
-                cell.title = `${dateStr}: ${count} ${count === 1 ? 'Übung' : 'Übungen'}`;
-                
-                heatmap.appendChild(cell);
+        const cell = document.createElement('div');
+        cell.className = 'heatmap-cell';
+        
+        let level = 0;
+        if (count > 0) level = 1;
+        if (count >= 2) level = 2;
+        if (count >= 4) level = 3;
+        if (count >= 6) level = 4;
+        
+        cell.setAttribute('data-level', level);
+        cell.title = `${dateStr}: ${count} ${count === 1 ? 'Übung' : 'Übungen'}`;
+        
+        heatmap.appendChild(cell);
 
-                const month = date.toLocaleDateString('de-DE', { month: 'short' });
-                if (month !== currentMonth && date.getDate() <= 7) {
-                    currentMonth = month;
-                    monthPositions.push({ month, index: i });
-                }
-            }
-
-            monthPositions.forEach(pos => {
-                const label = document.createElement('div');
-                label.textContent = pos.month;
-                monthLabels.appendChild(label);
-            });
-
-            const totalDays = Object.keys(workoutData).length;
-            document.getElementById('totalDays').textContent = totalDays;
-
-            let currentStreak = 0;
-            let checkDate = new Date(today);
-            while (true) {
-                const dateStr = checkDate.toISOString().split('T')[0];
-                if (workoutData[dateStr]) {
-                    currentStreak++;
-                    checkDate.setDate(checkDate.getDate() - 1);
-                } else {
-                    break;
-                }
-            }
-            document.getElementById('currentStreak').textContent = currentStreak;
-
-            let longestStreak = 0;
-            let tempStreak = 0;
-            for (let i = 0; i <= days; i++) {
-                const date = new Date(startDate);
-                date.setDate(date.getDate() + i);
-                const dateStr = date.toISOString().split('T')[0];
-                
-                if (workoutData[dateStr]) {
-                    tempStreak++;
-                    longestStreak = Math.max(longestStreak, tempStreak);
-                } else {
-                    tempStreak = 0;
-                }
-            }
-            document.getElementById('longestStreak').textContent = longestStreak;
+        const month = date.toLocaleDateString('de-DE', { month: 'short' });
+        const dayOfWeek = (date.getDay() + 6) % 7; // Convert to Monday = 0
+        
+        // Track month changes at the start of a week column (Monday)
+        if (month !== currentMonth && dayOfWeek === 0) {
+            currentMonth = month;
+            const weekIndex = Math.floor(i / 7);
+            monthPositions.push({ month, weekIndex });
         }
+    }
+
+    // Create month labels based on week positions
+    const totalWeeks = Math.ceil(days / 7);
+    for (let week = 0; week < totalWeeks; week++) {
+        const monthPos = monthPositions.find(m => m.weekIndex === week);
+        const label = document.createElement('div');
+        label.textContent = monthPos ? monthPos.month : '';
+        label.style.width = '15px';
+        monthLabels.appendChild(label);
+    }
+
+    const totalDays = Object.keys(workoutData).length;
+    document.getElementById('totalDays').textContent = totalDays;
+
+    let currentStreak = 0;
+    let checkDate = new Date(today);
+    while (true) {
+        const dateStr = checkDate.toISOString().split('T')[0];
+        if (workoutData[dateStr]) {
+            currentStreak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+        } else {
+            break;
+        }
+    }
+    document.getElementById('currentStreak').textContent = currentStreak;
+
+    let longestStreak = 0;
+    let tempStreak = 0;
+    for (let i = 0; i <= days; i++) {
+        const date = new Date(startDate);
+        date.setDate(date.getDate() + i);
+        const dateStr = date.toISOString().split('T')[0];
+        
+        if (workoutData[dateStr]) {
+            tempStreak++;
+            longestStreak = Math.max(longestStreak, tempStreak);
+        } else {
+            tempStreak = 0;
+        }
+    }
+    document.getElementById('longestStreak').textContent = longestStreak;
+}
 
         function renderDaySelector() {
             const daySelector = document.getElementById('daySelector');
