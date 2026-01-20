@@ -729,10 +729,13 @@
         // TEST: Add a workout for today
 function addTestWorkout() {
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset to midnight
     const dateStr = today.toISOString().split('T')[0];
-    workoutData[dateStr] = 2; // 2 exercises today
+    console.log('Adding workout for:', dateStr); // Debug
+    workoutData[dateStr] = 2;
     localStorage.setItem('workoutData', JSON.stringify(workoutData));
-    renderHeatmap();
+    sessionStorage.setItem('workoutPlanLogin', 'true');
+    showDaySelection();
 }
 
         function loadWorkoutData() {
@@ -785,7 +788,7 @@ function addTestWorkout() {
             renderDaySelector();
         }
 
-        function renderHeatmap() {
+function renderHeatmap() {
     const heatmap = document.getElementById('heatmap');
     const monthLabels = document.getElementById('monthLabels');
     heatmap.innerHTML = '';
@@ -797,6 +800,7 @@ function addTestWorkout() {
     startDate.setDate(startDate.getDate() - days);
 
     const monthPositions = new Map();
+    let lastMonth = '';
 
     for (let i = 0; i <= days; i++) {
         const date = new Date(startDate);
@@ -818,30 +822,33 @@ function addTestWorkout() {
         
         heatmap.appendChild(cell);
 
+        // Track month changes
         const month = date.toLocaleDateString('de-DE', { month: 'short' });
         const weekIndex = Math.floor(i / 7);
         
-        // Store first week where each month appears
-        if (!monthPositions.has(month)) {
-            monthPositions.set(month, weekIndex);
+        if (month !== lastMonth) {
+            lastMonth = month;
+            monthPositions.set(weekIndex, month);
         }
     }
 
     // Create month labels with proper spacing
     const totalWeeks = Math.ceil((days + 1) / 7);
-    monthLabels.style.display = 'grid';
-    monthLabels.style.gridTemplateColumns = `repeat(${totalWeeks}, 15px)`;
-    monthLabels.style.gap = '3px';
-    
-    // Convert map to array for easier lookup
-    const monthArray = Array.from(monthPositions.entries());
     
     for (let week = 0; week < totalWeeks; week++) {
         const label = document.createElement('div');
-        const monthEntry = monthArray.find(([month, weekIdx]) => weekIdx === week);
-        label.textContent = monthEntry ? monthEntry[0] : '';
+        label.textContent = monthPositions.get(week) || '';
+        label.style.width = '15px';
+        label.style.fontSize = '12px';
+        label.style.color = '#666';
         monthLabels.appendChild(label);
     }
+    
+    // Set grid layout for month labels
+    monthLabels.style.display = 'grid';
+    monthLabels.style.gridTemplateColumns = `repeat(${totalWeeks}, 15px)`;
+    monthLabels.style.gap = '3px';
+    monthLabels.style.marginBottom = '5px';
 
     const totalDays = Object.keys(workoutData).length;
     document.getElementById('totalDays').textContent = totalDays;
