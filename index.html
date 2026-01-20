@@ -977,7 +977,7 @@ function saveWorkout(workout) {
                     weight: weight,
                     reps: reps,
                     sets: exercise.sets,
-                    timestamp: Date.now()
+                    timestamp: Date.now()};
 
                 saveWorkout(workout);
                 localStorage.setItem('workoutData', JSON.stringify(workoutData));
