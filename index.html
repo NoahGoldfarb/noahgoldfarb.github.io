@@ -159,7 +159,7 @@
 
         .day-selector {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(2, 1fr);
             gap: 10px;
             margin-bottom: 20px;
         }
@@ -503,7 +503,7 @@
                     </div>
                 </div>
 
-                <button onclick="nextSet()" class="success">✓ Satz abgeschlossen</button>
+                <button onclick="nextExercise()" class="success">✓ Fertig & Weiter</button>
                 <button onclick="skipExercise()" class="secondary">⏭️ Überspringen</button>
                 <button onclick="endWorkout()" class="danger">❌ Workout beenden</button>
             </div>
@@ -561,7 +561,6 @@
 
         let currentDay = null;
         let currentExerciseIndex = 0;
-        let currentSetNumber = 1;
         let completedExercises = [];
         let timerInterval = null;
         let remainingSeconds = 120;
@@ -788,12 +787,6 @@
             const days = 364;
             const startDate = new Date(today);
             startDate.setDate(startDate.getDate() - days);
-            
-            // align to Monday (ISO week)
-            const day = startDate.getDay(); // 0 = Sunday
-            const diff = (day === 0 ? -6 : 1) - day;
-            startDate.setDate(startDate.getDate() + diff);
-
 
             const cells = [];
             let currentMonth = '';
@@ -818,13 +811,6 @@
                 cell.title = `${dateStr}: ${count} ${count === 1 ? 'Übung' : 'Übungen'}`;
                 
                 heatmap.appendChild(cell);
-                function toLocalDateString(date) {
-                    const y = date.getFullYear();
-                    const m = String(date.getMonth() + 1).padStart(2, '0');
-                    const d = String(date.getDate()).padStart(2, '0');
-                    return `${y}-${m}-${d}`;
-                }
-
 
                 const month = date.toLocaleDateString('de-DE', { month: 'short' });
                 if (month !== currentMonth && date.getDate() <= 7) {
@@ -898,7 +884,6 @@
         function startWorkout(day) {
             currentDay = day;
             currentExerciseIndex = 0;
-            currentSetNumber = 1;
             completedExercises = [];
 
             document.getElementById('dayScreen').classList.add('hidden');
@@ -951,7 +936,7 @@
 
             document.getElementById('currentExerciseName').innerHTML = getExerciseLink(exercise.name);
             document.getElementById('currentExerciseDetails').textContent = 
-                `Satz ${currentSetNumber} von ${exercise.sets} (${exercise.reps} Wiederholungen)`;
+                `${exercise.sets} Sätze × ${exercise.reps} Wiederholungen`;
             
             document.getElementById('logWeight').value = '';
             document.getElementById('logReps').value = '';
@@ -959,7 +944,7 @@
             renderExerciseList();
         }
 
-        function nextSet() {
+        function nextExercise() {
             const weight = parseFloat(document.getElementById('logWeight').value);
             const reps = parseInt(document.getElementById('logReps').value);
 
@@ -969,8 +954,7 @@
                     exercise: exercise.name,
                     weight: weight,
                     reps: reps,
-                    set: currentSetNumber,
-                    totalSets: exercise.sets,
+                    sets: exercise.sets,
                     timestamp: Date.now()
                 };
 
@@ -978,23 +962,13 @@
                 localStorage.setItem('workoutData', JSON.stringify(workoutData));
             }
 
-            const exercise = workoutPlan.schedule[currentDay].exercises[currentExerciseIndex];
-            
-            if (currentSetNumber >= exercise.sets) {
-                // Move to next exercise
-                completedExercises.push(currentExerciseIndex);
-                currentExerciseIndex++;
-                currentSetNumber = 1;
+            completedExercises.push(currentExerciseIndex);
+            currentExerciseIndex++;
 
-                const exercises = workoutPlan.schedule[currentDay].exercises;
-                if (currentExerciseIndex >= exercises.length) {
-                    showComplete();
-                } else {
-                    startRestTimer();
-                }
+            const exercises = workoutPlan.schedule[currentDay].exercises;
+            if (currentExerciseIndex >= exercises.length) {
+                showComplete();
             } else {
-                // Next set of same exercise
-                currentSetNumber++;
                 startRestTimer();
             }
         }
@@ -1002,13 +976,12 @@
         function skipExercise() {
             completedExercises.push(currentExerciseIndex);
             currentExerciseIndex++;
-            currentSetNumber = 1;
 
             const exercises = workoutPlan.schedule[currentDay].exercises;
             if (currentExerciseIndex >= exercises.length) {
                 showComplete();
             } else {
-                showCurrentExercise();
+                startRestTimer();
             }
         }
 
@@ -1051,20 +1024,8 @@
             clearInterval(timerInterval);
             showCurrentExercise();
         }
-        function markWorkoutDay() {
-        const today = new Date();
-        const key = toLocalDateString(today);
-    
-        if (!workoutData[key]) {
-            workoutData[key] = 0;
-        }
-        workoutData[key]++;
-    
-        localStorage.setItem('workoutData', JSON.stringify(workoutData));
-        }
 
         function showComplete() {
-                markWorkoutDay(); // ✅ ADD THIS
             clearInterval(timerInterval);
             
             document.getElementById('exerciseCard').classList.add('hidden');
@@ -1081,7 +1042,6 @@
             clearInterval(timerInterval);
             currentDay = null;
             currentExerciseIndex = 0;
-            currentSetNumber = 1;
             completedExercises = [];
             loadWorkoutData();
         }
