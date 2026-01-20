@@ -882,19 +882,19 @@ function renderHeatmap() {
 
 
 
-function renderDaySelector() {
-    const daySelector = document.getElementById('daySelector');
-    daySelector.innerHTML = '';
+        function renderDaySelector() {
+            const daySelector = document.getElementById('daySelector');
+            daySelector.innerHTML = '';
 
-    workoutPlan.schedule.forEach((workout, index) => {
-        const btn = document.createElement('div');
-        btn.className = 'day-btn';
-        btn.innerHTML = `<strong>${workout.day}</strong><br><small>${workout.name}</small>`;
-        btn.onclick = () => startWorkout(index);
-        daySelector.appendChild(btn);
-    });
-}
-
+            Object.keys(workoutPlan.schedule).forEach(day => {
+                const workout = workoutPlan.schedule[day];
+                const btn = document.createElement('div');
+                btn.className = 'day-btn';
+                btn.innerHTML = `<strong>${day}</strong><br><small>${workout.name}</small>`;
+                btn.onclick = () => startWorkout(day);
+                daySelector.appendChild(btn);
+            });
+        }
 
         function getExerciseLink(name) {
             const link = exerciseLinks[name];
@@ -905,21 +905,18 @@ function renderDaySelector() {
             return `<a href="https://www.youtube.com/results?search_query=${searchQuery}" target="_blank">${name}</a>`;
         }
 
-function startWorkout(dayIndex) {
-    currentDay = dayIndex;
-    currentExerciseIndex = 0;
-    completedExercises = [];
+        function startWorkout(day) {
+            currentDay = day;
+            currentExerciseIndex = 0;
+            completedExercises = [];
 
-    const workout = workoutPlan.schedule[dayIndex];
+            document.getElementById('dayScreen').classList.add('hidden');
+            document.getElementById('workoutScreen').classList.remove('hidden');
+            document.getElementById('workoutTitle').textContent = workoutPlan.schedule[day].name;
 
-    document.getElementById('dayScreen').classList.add('hidden');
-    document.getElementById('workoutScreen').classList.remove('hidden');
-    document.getElementById('workoutTitle').textContent = workout.name;
-
-    renderExerciseList();
-    showCurrentExercise();
-}
-
+            renderExerciseList();
+            showCurrentExercise();
+        }
 
         function renderExerciseList() {
             const exercises = workoutPlan.schedule[currentDay].exercises;
@@ -1078,91 +1075,42 @@ function startWorkout(dayIndex) {
             document.getElementById('editScreen').classList.remove('hidden');
             renderEditForm();
         }
-/* ===== DAY MANAGEMENT ===== */
 
-function addDay() {
-    workoutPlan.schedule.push({
-        day: "Neuer Tag",
-        name: "Neues Workout",
-        workout_type: "upper",
-        exercises: []
-    });
-    renderEditForm();
-}
+        function renderEditForm() {
+            const editContent = document.getElementById('editContent');
+            let html = '';
 
-function removeDay(index) {
-    workoutPlan.schedule.splice(index, 1);
-    renderEditForm();
-}
-
-function moveDay(index, direction) {
-    const newIndex = index + direction;
-    if (newIndex < 0 || newIndex >= workoutPlan.schedule.length) return;
-
-    const tmp = workoutPlan.schedule[index];
-    workoutPlan.schedule[index] = workoutPlan.schedule[newIndex];
-    workoutPlan.schedule[newIndex] = tmp;
-
-    renderEditForm();
-}
-
-
-        
-function renderEditForm() {
-    const editContent = document.getElementById('editContent');
-    editContent.innerHTML = '';
-
-    workoutPlan.schedule.forEach((workout, dayIndex) => {
-        const dayCard = document.createElement('div');
-        dayCard.className = 'edit-day-card';
-
-        dayCard.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h3>Trainingstag</h3>
-                <div>
-                    <button class="small" onclick="moveDay(${dayIndex}, -1)">⬆️</button>
-                    <button class="small" onclick="moveDay(${dayIndex}, 1)">⬇️</button>
-                    <button class="small danger" onclick="removeDay(${dayIndex})">🗑️</button>
-                </div>
-            </div>
-
-            <label class="label">Wochentag</label>
-            <input type="text" class="day-name" value="${workout.day}">
-
-            <label class="label">Workout Name</label>
-            <input type="text" class="workout-name" value="${workout.name}">
-
-            <label class="label">Workout Typ</label>
-            <select class="workout-type">
-                <option value="upper" ${workout.workout_type === 'upper' ? 'selected' : ''}>Upper</option>
-                <option value="lower" ${workout.workout_type === 'lower' ? 'selected' : ''}>Lower</option>
-                <option value="full" ${workout.workout_type === 'full' ? 'selected' : ''}>Full Body</option>
-            </select>
-
-            <div class="exercises-list">
-                ${workout.exercises.map((ex, exIndex) => `
-                    <div class="edit-exercise-item">
-                        <div class="input-grid">
-                            <input class="ex-name" value="${ex.name}">
-                            <input class="ex-sets" type="number" value="${ex.sets}">
-                            <input class="ex-reps" value="${ex.reps}">
+            Object.keys(workoutPlan.schedule).forEach(day => {
+                const workout = workoutPlan.schedule[day];
+                html += `
+                    <div class="edit-day-card">
+                        <h3>${day}</h3>
+                        <div>
+                            <label class="label">Workout Name</label>
+                            <input type="text" class="workout-name" data-day="${day}" value="${workout.name}">
                         </div>
-                        <button class="small danger" onclick="removeExercise(${dayIndex}, ${exIndex})">🗑️</button>
+                        <div style="margin-top: 15px;">
+                            <label class="label">Übungen</label>
+                            <div class="exercises-list" data-day="${day}">
+                                ${workout.exercises.map((ex, idx) => `
+                                    <div class="edit-exercise-item">
+                                        <div class="input-grid">
+                                            <input type="text" class="ex-name" placeholder="Übungsname" value="${ex.name}">
+                                            <input type="number" class="ex-sets" placeholder="Sätze" value="${ex.sets}">
+                                            <input type="text" class="ex-reps" placeholder="Wdh." value="${ex.reps}">
+                                        </div>
+                                        <button class="small danger" onclick="removeExercise('${day}', ${idx})">🗑️ Löschen</button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <button class="small" onclick="addExercise('${day}')">➕ Übung hinzufügen</button>
+                        </div>
                     </div>
-                `).join('')}
-            </div>
+                `;
+            });
 
-            <button class="small" onclick="addExercise(${dayIndex})">➕ Übung hinzufügen</button>
-        `;
-
-        editContent.appendChild(dayCard);
-    });
-
-    editContent.innerHTML += `
-        <button onclick="addDay()">➕ Trainingstag hinzufügen</button>
-    `;
-}
-
+            editContent.innerHTML = html;
+        }
 
         function addExercise(day) {
             const container = document.querySelector(`.exercises-list[data-day="${day}"]`);
@@ -1183,39 +1131,53 @@ function renderEditForm() {
             renderEditForm();
         }
 
-function savePlanEdits() {
-    try {
-        const dayCards = document.querySelectorAll('.edit-day-card');
-        const newSchedule = [];
+        function savePlanEdits() {
+            const errorDiv = document.getElementById('editError');
+            const successDiv = document.getElementById('editSuccess');
+            
+            try {
+                const newSchedule = {};
 
-        dayCards.forEach(card => {
-            const day = card.querySelector('.day-name').value.trim();
-            const name = card.querySelector('.workout-name').value.trim();
-            const type = card.querySelector('.workout-type').value;
+                Object.keys(workoutPlan.schedule).forEach(day => {
+                    const nameInput = document.querySelector(`.workout-name[data-day="${day}"]`);
+                    const exercisesList = document.querySelector(`.exercises-list[data-day="${day}"]`);
+                    const exerciseItems = exercisesList.querySelectorAll('.edit-exercise-item');
 
-            const exercises = [];
-            card.querySelectorAll('.edit-exercise-item').forEach(item => {
-                const exName = item.querySelector('.ex-name').value.trim();
-                const sets = parseInt(item.querySelector('.ex-sets').value);
-                const reps = item.querySelector('.ex-reps').value.trim();
+                    const exercises = [];
+                    exerciseItems.forEach(item => {
+                        const name = item.querySelector('.ex-name').value.trim();
+                        const sets = parseInt(item.querySelector('.ex-sets').value);
+                        const reps = item.querySelector('.ex-reps').value.trim();
 
-                if (exName && sets && reps) {
-                    exercises.push({ name: exName, sets, reps });
-                }
-            });
+                        if (name && sets && reps) {
+                            exercises.push({ name, sets, reps });
+                        }
+                    });
 
-            newSchedule.push({ day, name, workout_type: type, exercises });
-        });
+                    newSchedule[day] = {
+                        name: nameInput.value,
+                        workout_type: workoutPlan.schedule[day].workout_type,
+                        exercises: exercises
+                    };
+                });
 
-        workoutPlan.schedule = newSchedule;
-        localStorage.setItem('workoutPlan', JSON.stringify(workoutPlan));
+                workoutPlan.schedule = newSchedule;
+                localStorage.setItem('workoutPlan', JSON.stringify(workoutPlan));
+                
+                errorDiv.classList.add('hidden');
+                successDiv.textContent = '✓ Plan gespeichert!';
+                successDiv.classList.remove('hidden');
 
-        backToDaySelection();
-    } catch (e) {
-        alert("Fehler beim Speichern");
-        console.error(e);
-    }
-}
+                setTimeout(() => {
+                    backToDaySelection();
+                }, 1500);
+
+            } catch (e) {
+                errorDiv.textContent = 'Fehler beim Speichern: ' + e.message;
+                errorDiv.classList.remove('hidden');
+                successDiv.classList.add('hidden');
+            }
+        }
 
         window.addEventListener('load', () => {
             const passwordInput = document.getElementById('password');
