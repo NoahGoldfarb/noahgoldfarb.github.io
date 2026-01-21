@@ -211,15 +211,6 @@
             margin-bottom: 8px;
         }
 
-        .exercise-name a {
-            color: #667eea;
-            text-decoration: none;
-        }
-
-        .exercise-name a:hover {
-            text-decoration: underline;
-        }
-
         .exercise-details {
             color: #555;
             font-size: 1rem;
@@ -392,6 +383,20 @@
             margin-top: 5px;
         }
 
+        .day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .day-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
         @media (max-width: 480px) {
             .card {
                 padding: 20px;
@@ -406,6 +411,10 @@
             }
 
             .input-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .day-inputs {
                 grid-template-columns: 1fr;
             }
 
@@ -515,6 +524,7 @@
         <div id="editScreen" class="hidden card">
             <h1>✏️ Plan bearbeiten</h1>
             <div id="editContent"></div>
+            <button onclick="addNewDay()" class="secondary">➕ Neuen Tag hinzufügen</button>
             <button onclick="savePlanEdits()">💾 Speichern</button>
             <button onclick="backToDaySelection()" class="secondary">⬅️ Zurück ohne Speichern</button>
             <div id="editError" class="error hidden"></div>
@@ -561,35 +571,6 @@
         let isOnline = navigator.onLine;
         let pendingSync = [];
 
-        const exerciseLinks = {
-            "Schrägbankdrücken Langhantel": "https://www.youtube.com/results?search_query=incline+barbell+bench+press+tutorial",
-            "Gewichtete Klimmzüge": "https://www.youtube.com/results?search_query=weighted+pull+ups+tutorial",
-            "T-Bar Rudern": "https://www.youtube.com/results?search_query=t+bar+row+tutorial",
-            "Kabel Seitheben": "https://www.youtube.com/results?search_query=cable+lateral+raise+tutorial",
-            "Überkopf Trizeps Kabel": "https://www.youtube.com/results?search_query=overhead+cable+triceps+extension+tutorial",
-            "Bizeps Curl Kabel": "https://www.youtube.com/results?search_query=cable+curl+tutorial",
-            "Kniebeuge": "https://www.youtube.com/results?search_query=back+squat+tutorial",
-            "Rumänisches Kreuzheben": "https://www.youtube.com/results?search_query=romanian+deadlift+tutorial",
-            "Beinpresse": "https://www.youtube.com/results?search_query=leg+press+tutorial",
-            "Wadenheben stehend": "https://www.youtube.com/results?search_query=standing+calf+raise+tutorial",
-            "Beinheben hängend": "https://www.youtube.com/results?search_query=hanging+leg+raise+tutorial",
-            "Kurzhantel Bankdrücken": "https://www.youtube.com/results?search_query=dumbbell+bench+press+tutorial",
-            "Kabel Flys": "https://www.youtube.com/results?search_query=cable+fly+tutorial",
-            "Klimmzüge oder Latzug": "https://www.youtube.com/results?search_query=pull+ups+lat+pulldown+tutorial",
-            "Rudern Kabel sitzend": "https://www.youtube.com/results?search_query=seated+cable+row+tutorial",
-            "Kurzhantel Seitheben": "https://www.youtube.com/results?search_query=dumbbell+lateral+raise+tutorial",
-            "Reverse Flys Kabel": "https://www.youtube.com/results?search_query=cable+reverse+fly+tutorial",
-            "Bizeps Curl EZ-Stange": "https://www.youtube.com/results?search_query=ez+bar+curl+tutorial",
-            "Trizeps Pushdown": "https://www.youtube.com/results?search_query=triceps+pushdown+tutorial",
-            "Front Kniebeuge": "https://www.youtube.com/results?search_query=front+squat+tutorial",
-            "Beinbeuger liegend": "https://www.youtube.com/results?search_query=lying+leg+curl+tutorial",
-            "Hip Thrust": "https://www.youtube.com/results?search_query=hip+thrust+tutorial",
-            "Ausfallschritte": "https://www.youtube.com/results?search_query=walking+lunges+tutorial",
-            "Wadenheben sitzend": "https://www.youtube.com/results?search_query=seated+calf+raise+tutorial",
-            "Kabel Crunches": "https://www.youtube.com/results?search_query=cable+crunch+tutorial"
-        };
-
-        // Load saved plan from localStorage as fallback
         const savedPlan = localStorage.getItem('workoutPlan');
         if (savedPlan) {
             try {
@@ -599,13 +580,11 @@
             }
         }
 
-        // Listen for plan changes in Firebase (REAL-TIME SYNC)
         database.ref('workoutPlan').on('value', snapshot => {
             if (snapshot.exists()) {
                 workoutPlan = snapshot.val();
                 localStorage.setItem('workoutPlan', JSON.stringify(workoutPlan));
                 
-                // Update UI if we're on day selection screen
                 const dayScreen = document.getElementById('dayScreen');
                 if (dayScreen && !dayScreen.classList.contains('hidden')) {
                     renderDaySelector();
@@ -613,7 +592,6 @@
             }
         });
 
-        // Load pending sync data
         const savedPendingSync = localStorage.getItem('pendingSync');
         if (savedPendingSync) {
             try {
@@ -725,7 +703,6 @@
 
         function loadWorkoutData() {
             if (isOnline) {
-                // Load workout history
                 database.ref('workouts').once('value', snapshot => {
                     const workouts = [];
                     snapshot.forEach(child => {
@@ -748,13 +725,11 @@
                     loadLocalWorkoutData();
                 });
 
-                // Load workout plan (if it exists in Firebase)
                 database.ref('workoutPlan').once('value', snapshot => {
                     if (snapshot.exists()) {
                         workoutPlan = snapshot.val();
                         localStorage.setItem('workoutPlan', JSON.stringify(workoutPlan));
                     } else {
-                        // First time - save current plan to Firebase
                         database.ref('workoutPlan').set(workoutPlan);
                     }
                 });
@@ -890,15 +865,6 @@
             });
         }
 
-        function getExerciseLink(name) {
-            const link = exerciseLinks[name];
-            if (link) {
-                return `<a href="${link}" target="_blank">${name}</a>`;
-            }
-            const searchQuery = encodeURIComponent(name + " tutorial");
-            return `<a href="https://www.youtube.com/results?search_query=${searchQuery}" target="_blank">${name}</a>`;
-        }
-
         function startWorkout(day) {
             currentDay = day;
             currentExerciseIndex = 0;
@@ -923,7 +889,7 @@
 
                 return `
                     <div class="${className}">
-                        <div class="exercise-name">${getExerciseLink(ex.name)}</div>
+                        <div class="exercise-name">${ex.name}</div>
                         <div class="exercise-details">${ex.sets} Sätze × ${ex.reps} Wdh.</div>
                     </div>
                 `;
@@ -952,7 +918,7 @@
             document.getElementById('exerciseCard').classList.remove('hidden');
             document.getElementById('completeCard').classList.add('hidden');
 
-            document.getElementById('currentExerciseName').innerHTML = getExerciseLink(exercise.name);
+            document.getElementById('currentExerciseName').textContent = exercise.name;
             document.getElementById('currentExerciseDetails').textContent = 
                 `${exercise.sets} Sätze × ${exercise.reps} Wiederholungen`;
             
@@ -1077,16 +1043,20 @@
             Object.keys(workoutPlan.schedule).forEach((day, dayIdx) => {
                 const workout = workoutPlan.schedule[day];
                 html += `
-                    <div class="edit-day-card" data-day-index="${dayIdx}">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <div style="flex: 1;">
+                    <div class="edit-day-card" data-day="${day}">
+                        <div class="day-header">
+                            <h3>Tag ${dayIdx + 1}</h3>
+                            <button class="small danger" onclick="removeDay('${day}')">🗑️ Tag löschen</button>
+                        </div>
+                        <div class="day-inputs">
+                            <div>
                                 <label class="label">Tag Name</label>
                                 <input type="text" class="day-name" data-original-day="${day}" value="${day}">
                             </div>
-                        </div>
-                        <div>
-                            <label class="label">Workout Name</label>
-                            <input type="text" class="workout-name" data-day="${day}" value="${workout.name}">
+                            <div>
+                                <label class="label">Workout Name</label>
+                                <input type="text" class="workout-name" data-day="${day}" value="${workout.name}">
+                            </div>
                         </div>
                         <div style="margin-top: 15px;">
                             <label class="label">Übungen</label>
@@ -1112,6 +1082,33 @@
             editContent.innerHTML = html;
         }
 
+        function addNewDay() {
+            const daysInSchedule = Object.keys(workoutPlan.schedule).length;
+            const newDayName = `Tag ${daysInSchedule + 1}`;
+            
+            workoutPlan.schedule[newDayName] = {
+                name: "Neues Workout",
+                workout_type: "custom",
+                exercises: [
+                    {name: "Übung 1", sets: 3, reps: "10-12"}
+                ]
+            };
+            
+            renderEditForm();
+        }
+
+        function removeDay(day) {
+            if (Object.keys(workoutPlan.schedule).length <= 1) {
+                alert('Du musst mindestens einen Tag behalten!');
+                return;
+            }
+            
+            if (confirm(`Möchtest du "${day}" wirklich löschen?`)) {
+                delete workoutPlan.schedule[day];
+                renderEditForm();
+            }
+        }
+
         function addExercise(day) {
             const container = document.querySelector(`.exercises-list[data-day="${day}"]`);
             const newExercise = document.createElement('div');
@@ -1133,10 +1130,19 @@
             
             try {
                 const newSchedule = {};
+                const dayCards = document.querySelectorAll('.edit-day-card');
 
-                Object.keys(workoutPlan.schedule).forEach(day => {
-                    const nameInput = document.querySelector(`.workout-name[data-day="${day}"]`);
-                    const exercisesList = document.querySelector(`.exercises-list[data-day="${day}"]`);
+                dayCards.forEach(card => {
+                    const originalDay = card.dataset.day;
+                    const dayNameInput = card.querySelector('.day-name');
+                    const newDayName = dayNameInput.value.trim();
+                    
+                    if (!newDayName) {
+                        throw new Error('Tag Name darf nicht leer sein');
+                    }
+
+                    const nameInput = card.querySelector('.workout-name');
+                    const exercisesList = card.querySelector('.exercises-list');
                     const exerciseItems = exercisesList.querySelectorAll('.edit-exercise-item');
 
                     const exercises = [];
@@ -1150,16 +1156,15 @@
                         }
                     });
 
-                    newSchedule[day] = {
+                    newSchedule[newDayName] = {
                         name: nameInput.value,
-                        workout_type: workoutPlan.schedule[day].workout_type,
+                        workout_type: workoutPlan.schedule[originalDay]?.workout_type || 'custom',
                         exercises: exercises
                     };
                 });
 
                 workoutPlan.schedule = newSchedule;
                 
-                // Save to both localStorage and Firebase
                 localStorage.setItem('workoutPlan', JSON.stringify(workoutPlan));
                 
                 if (isOnline) {
