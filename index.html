@@ -340,11 +340,11 @@
             border-radius: 2px;
         }
 
-.month-labels {
-    margin-bottom: 5px;
-    font-size: 12px;
-    color: #666;
-}
+        .month-labels {
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #666;
+        }
 
         .edit-day-card {
             background: #f8f9fa;
@@ -417,12 +417,10 @@
     </style>
 </head>
 <body>
-    <!-- Offline/Online Indicator -->
     <div id="offlineIndicator" class="offline-indicator">📡 Offline</div>
     <div id="syncIndicator" class="sync-indicator">🔄 Synchronisiere...</div>
 
     <div class="container">
-        <!-- Login Screen -->
         <div id="authScreen" class="card">
             <h1>🏋️ Workout Plan</h1>
             <label class="label" for="password">Passwort</label>
@@ -430,7 +428,7 @@
             <button onclick="login()">Anmelden</button>
             <div id="authError" class="error hidden"></div>
         </div>
-        <!-- Day Selection Screen -->
+
         <div id="dayScreen" class="hidden card">
             <h1>🏋️ Workout Plan</h1>
             
@@ -468,7 +466,6 @@
             <button onclick="showEditPlan()" class="secondary">✏️ Plan bearbeiten</button>
         </div>
 
-        <!-- Workout Screen -->
         <div id="workoutScreen" class="hidden">
             <div class="card">
                 <h1 id="workoutTitle">Upper A - Strength</h1>
@@ -515,7 +512,6 @@
             </div>
         </div>
 
-        <!-- Edit Plan Screen -->
         <div id="editScreen" class="hidden card">
             <h1>✏️ Plan bearbeiten</h1>
             <div id="editContent"></div>
@@ -593,7 +589,7 @@
             "Kabel Crunches": "https://www.youtube.com/results?search_query=cable+crunch+tutorial"
         };
 
-        // Load saved plan
+        // Load saved plan from localStorage as fallback
         const savedPlan = localStorage.getItem('workoutPlan');
         if (savedPlan) {
             try {
@@ -602,6 +598,20 @@
                 console.error('Error loading saved plan:', e);
             }
         }
+
+        // Listen for plan changes in Firebase (REAL-TIME SYNC)
+        database.ref('workoutPlan').on('value', snapshot => {
+            if (snapshot.exists()) {
+                workoutPlan = snapshot.val();
+                localStorage.setItem('workoutPlan', JSON.stringify(workoutPlan));
+                
+                // Update UI if we're on day selection screen
+                const dayScreen = document.getElementById('dayScreen');
+                if (dayScreen && !dayScreen.classList.contains('hidden')) {
+                    renderDaySelector();
+                }
+            }
+        });
 
         // Load pending sync data
         const savedPendingSync = localStorage.getItem('pendingSync');
@@ -613,7 +623,6 @@
             }
         }
 
-        // Online/Offline detection
         function updateOnlineStatus() {
             isOnline = navigator.onLine;
             const indicator = document.getElementById('offlineIndicator');
@@ -624,7 +633,6 @@
                 indicator.classList.add('show');
                 setTimeout(() => indicator.classList.remove('show'), 3000);
                 
-                // Try to sync pending data
                 syncPendingData();
             } else {
                 indicator.textContent = '📡 Offline';
@@ -636,7 +644,6 @@
         window.addEventListener('online', updateOnlineStatus);
         window.addEventListener('offline', updateOnlineStatus);
 
-        // Sync pending data to Firebase
         async function syncPendingData() {
             if (pendingSync.length === 0) return;
             
@@ -648,7 +655,6 @@
                     await database.ref('workouts').push(workout);
                 }
                 
-                // Clear pending sync
                 pendingSync = [];
                 localStorage.setItem('pendingSync', JSON.stringify(pendingSync));
                 
@@ -658,7 +664,6 @@
                     syncIndicator.textContent = '🔄 Synchronisiere...';
                 }, 2000);
                 
-                // Reload data
                 loadWorkoutData();
             } catch (error) {
                 console.error('Sync failed:', error);
@@ -670,20 +675,16 @@
             }
         }
 
-        // Save workout (online or offline)
         function saveWorkout(workout) {
             if (isOnline) {
-                // Save directly to Firebase
                 database.ref('workouts').push(workout).catch(error => {
                     console.error('Save failed, adding to pending sync:', error);
                     addToPendingSync(workout);
                 });
             } else {
-                // Save to pending sync
                 addToPendingSync(workout);
             }
             
-            // Update local data immediately
             const date = new Date(workout.timestamp);
             const dateStr = date.toISOString().split('T')[0];
             if (!workoutData[dateStr]) {
@@ -701,13 +702,11 @@
             indicator.classList.add('show');
         }
 
-        // Check login
         const savedLogin = sessionStorage.getItem('workoutPlanLogin');
         if (savedLogin === 'true') {
             loadWorkoutData();
         }
 
-        // Initial online status
         updateOnlineStatus();
 
         function login() {
@@ -724,10 +723,9 @@
             }
         }
 
-
-
         function loadWorkoutData() {
             if (isOnline) {
+                // Load workout history
                 database.ref('workouts').once('value', snapshot => {
                     const workouts = [];
                     snapshot.forEach(child => {
@@ -748,6 +746,17 @@
                 }).catch(error => {
                     console.error('Failed to load from Firebase, using local data:', error);
                     loadLocalWorkoutData();
+                });
+
+                // Load workout plan (if it exists in Firebase)
+                database.ref('workoutPlan').once('value', snapshot => {
+                    if (snapshot.exists()) {
+                        workoutPlan = snapshot.val();
+                        localStorage.setItem('workoutPlan', JSON.stringify(workoutPlan));
+                    } else {
+                        // First time - save current plan to Firebase
+                        database.ref('workoutPlan').set(workoutPlan);
+                    }
                 });
             } else {
                 loadLocalWorkoutData();
@@ -775,112 +784,97 @@
             renderHeatmap();
             renderDaySelector();
         }
-function renderHeatmap() {
-    const heatmap = document.getElementById('heatmap');
-    const monthLabels = document.getElementById('monthLabels');
-    heatmap.innerHTML = '';
-    monthLabels.innerHTML = '';
 
-    const YEAR = 2026;
+        function renderHeatmap() {
+            const heatmap = document.getElementById('heatmap');
+            const monthLabels = document.getElementById('monthLabels');
+            heatmap.innerHTML = '';
+            monthLabels.innerHTML = '';
 
-    const startDate = new Date(YEAR, 0, 1);   // Jan 1, 2026
-    const endDate   = new Date(YEAR, 11, 31); // Dec 31, 2026
+            const YEAR = 2026;
+            const startDate = new Date(YEAR, 0, 1);
+            const endDate = new Date(YEAR, 11, 31);
 
-    // Align start to Monday
-    const startDay = (startDate.getDay() + 6) % 7;
-    const adjustedStart = new Date(startDate);
-    adjustedStart.setDate(adjustedStart.getDate() - startDay);
+            const startDay = (startDate.getDay() + 6) % 7;
+            const adjustedStart = new Date(startDate);
+            adjustedStart.setDate(adjustedStart.getDate() - startDay);
 
-    const totalDays =
-        Math.round((endDate - adjustedStart) / (1000 * 60 * 60 * 24)) + 1;
-    const totalWeeks = Math.ceil(totalDays / 7);
+            const totalDays = Math.round((endDate - adjustedStart) / (1000 * 60 * 60 * 24)) + 1;
+            const totalWeeks = Math.ceil(totalDays / 7);
 
-    const monthPositions = new Map();
-    let lastMonth = '';
+            const monthPositions = new Map();
+            let lastMonth = '';
 
-    for (let i = 0; i < totalDays; i++) {
-        const date = new Date(adjustedStart);
-        date.setDate(date.getDate() + i);
+            for (let i = 0; i < totalDays; i++) {
+                const date = new Date(adjustedStart);
+                date.setDate(date.getDate() + i);
 
-        const cell = document.createElement('div');
-        cell.className = 'heatmap-cell';
+                const cell = document.createElement('div');
+                cell.className = 'heatmap-cell';
 
-        // Outside 2026 → invisible padding
-        if (date < startDate || date > endDate) {
-            cell.style.opacity = '0';
-            heatmap.appendChild(cell);
-            continue;
+                if (date < startDate || date > endDate) {
+                    cell.style.opacity = '0';
+                    heatmap.appendChild(cell);
+                    continue;
+                }
+
+                const dateStr = date.toISOString().split('T')[0];
+                const count = workoutData[dateStr] || 0;
+
+                let level = 0;
+                if (count > 0) level = 1;
+                if (count >= 2) level = 2;
+                if (count >= 4) level = 3;
+                if (count >= 6) level = 4;
+
+                cell.dataset.level = level;
+                cell.title = `${dateStr}: ${count} ${count === 1 ? 'Workout' : 'Workouts'}`;
+                heatmap.appendChild(cell);
+
+                const month = date.toLocaleDateString('de-DE', { month: 'short' });
+                const weekIndex = Math.floor(i / 7);
+
+                if (month !== lastMonth) {
+                    lastMonth = month;
+                    monthPositions.set(weekIndex, month);
+                }
+            }
+
+            for (let w = 0; w < totalWeeks; w++) {
+                const label = document.createElement('div');
+                label.textContent = monthPositions.get(w) || '';
+                monthLabels.appendChild(label);
+            }
+
+            monthLabels.style.display = 'grid';
+            monthLabels.style.gridTemplateColumns = `repeat(${totalWeeks}, 15px)`;
+            monthLabels.style.gap = '3px';
+
+            const dates2026 = Object.keys(workoutData).filter(d => d.startsWith('2026'));
+            document.getElementById('totalDays').textContent = dates2026.length;
+
+            let currentStreak = 0;
+            let d = new Date(YEAR, 11, 31);
+            while (true) {
+                const ds = d.toISOString().split('T')[0];
+                if (workoutData[ds]) {
+                    currentStreak++;
+                    d.setDate(d.getDate() - 1);
+                } else break;
+            }
+            document.getElementById('currentStreak').textContent = currentStreak;
+
+            let longest = 0, temp = 0;
+            for (let i = 0; i <= 364; i++) {
+                const d = new Date(YEAR, 0, 1 + i);
+                const ds = d.toISOString().split('T')[0];
+                if (workoutData[ds]) {
+                    temp++;
+                    longest = Math.max(longest, temp);
+                } else temp = 0;
+            }
+            document.getElementById('longestStreak').textContent = longest;
         }
-
-        const dateStr = date.toISOString().split('T')[0];
-        const count = workoutData[dateStr] || 0;
-
-        let level = 0;
-        if (count > 0) level = 1;
-        if (count >= 2) level = 2;
-        if (count >= 4) level = 3;
-        if (count >= 6) level = 4;
-
-        cell.dataset.level = level;
-        cell.title = `${dateStr}: ${count} ${count === 1 ? 'Workout' : 'Workouts'}`;
-        heatmap.appendChild(cell);
-
-        const month = date.toLocaleDateString('de-DE', { month: 'short' });
-        const weekIndex = Math.floor(i / 7);
-
-        if (month !== lastMonth) {
-            lastMonth = month;
-            monthPositions.set(weekIndex, month);
-        }
-    }
-
-    // Month labels
-    for (let w = 0; w < totalWeeks; w++) {
-        const label = document.createElement('div');
-        label.textContent = monthPositions.get(w) || '';
-        monthLabels.appendChild(label);
-    }
-
-    monthLabels.style.display = 'grid';
-    monthLabels.style.gridTemplateColumns = `repeat(${totalWeeks}, 15px)`;
-    monthLabels.style.gap = '3px';
-
-    // Stats
-    const dates2026 = Object.keys(workoutData).filter(d =>
-        d.startsWith('2026')
-    );
-
-    document.getElementById('totalDays').textContent = dates2026.length;
-
-    // Current streak (only inside 2026)
-    let currentStreak = 0;
-    let d = new Date(YEAR, 11, 31);
-
-    while (true) {
-        const ds = d.toISOString().split('T')[0];
-        if (workoutData[ds]) {
-            currentStreak++;
-            d.setDate(d.getDate() - 1);
-        } else break;
-    }
-
-    document.getElementById('currentStreak').textContent = currentStreak;
-
-    // Longest streak
-    let longest = 0, temp = 0;
-    for (let i = 0; i <= 364; i++) {
-        const d = new Date(YEAR, 0, 1 + i);
-        const ds = d.toISOString().split('T')[0];
-        if (workoutData[ds]) {
-            temp++;
-            longest = Math.max(longest, temp);
-        } else temp = 0;
-    }
-
-    document.getElementById('longestStreak').textContent = longest;
-}
-
-
 
         function renderDaySelector() {
             const daySelector = document.getElementById('daySelector');
@@ -1076,7 +1070,7 @@ function renderHeatmap() {
             renderEditForm();
         }
 
-function renderEditForm() {
+        function renderEditForm() {
             const editContent = document.getElementById('editContent');
             let html = '<div id="days-container">';
 
@@ -1089,7 +1083,6 @@ function renderEditForm() {
                                 <label class="label">Tag Name</label>
                                 <input type="text" class="day-name" data-original-day="${day}" value="${day}">
                             </div>
-                            <button class="small danger" onclick="removeDay('${day}')" style="margin-left: 10px; margin-top: 20px;">🗑️ Tag löschen</button>
                         </div>
                         <div>
                             <label class="label">Workout Name</label>
@@ -1105,7 +1098,7 @@ function renderEditForm() {
                                             <input type="number" class="ex-sets" placeholder="Sätze" value="${ex.sets}">
                                             <input type="text" class="ex-reps" placeholder="Wdh." value="${ex.reps}">
                                         </div>
-                                        <button class="small danger" onclick="removeExercise('${day}', ${idx})">🗑️ Löschen</button>
+                                        <button class="small danger" onclick="this.parentElement.remove()">🗑️ Löschen</button>
                                     </div>
                                 `).join('')}
                             </div>
@@ -1116,10 +1109,9 @@ function renderEditForm() {
             });
 
             html += '</div>';
-            html += '<button class="small success" onclick="addNewDay()" style="width: 100%; margin-top: 20px;">➕ Neuen Tag hinzufügen</button>';
-
             editContent.innerHTML = html;
         }
+
         function addExercise(day) {
             const container = document.querySelector(`.exercises-list[data-day="${day}"]`);
             const newExercise = document.createElement('div');
@@ -1133,10 +1125,6 @@ function renderEditForm() {
                 <button class="small danger" onclick="this.parentElement.remove()">🗑️ Löschen</button>
             `;
             container.appendChild(newExercise);
-        }
-
-        function removeExercise(day, idx) {
-            renderEditForm();
         }
 
         function savePlanEdits() {
@@ -1170,15 +1158,36 @@ function renderEditForm() {
                 });
 
                 workoutPlan.schedule = newSchedule;
+                
+                // Save to both localStorage and Firebase
                 localStorage.setItem('workoutPlan', JSON.stringify(workoutPlan));
                 
-                errorDiv.classList.add('hidden');
-                successDiv.textContent = '✓ Plan gespeichert!';
-                successDiv.classList.remove('hidden');
+                if (isOnline) {
+                    database.ref('workoutPlan').set(workoutPlan)
+                        .then(() => {
+                            errorDiv.classList.add('hidden');
+                            successDiv.textContent = '✓ Plan gespeichert und synchronisiert!';
+                            successDiv.classList.remove('hidden');
 
-                setTimeout(() => {
-                    backToDaySelection();
-                }, 1500);
+                            setTimeout(() => {
+                                backToDaySelection();
+                            }, 1500);
+                        })
+                        .catch(error => {
+                            console.error('Firebase save failed:', error);
+                            errorDiv.textContent = 'Lokal gespeichert, aber Synchronisierung fehlgeschlagen';
+                            errorDiv.classList.remove('hidden');
+                            successDiv.classList.add('hidden');
+                        });
+                } else {
+                    errorDiv.classList.add('hidden');
+                    successDiv.textContent = '✓ Lokal gespeichert (wird synchronisiert wenn online)';
+                    successDiv.classList.remove('hidden');
+
+                    setTimeout(() => {
+                        backToDaySelection();
+                    }, 1500);
+                }
 
             } catch (e) {
                 errorDiv.textContent = 'Fehler beim Speichern: ' + e.message;
