@@ -742,7 +742,13 @@
                         workoutData[dateStr]++;
                     });
 
-                    showDaySelection();
+                    database.ref('workouts').once('value', snapshot => {
+                        // build workoutData ...
+                        loadWorkoutPlan().then(() => {
+                            showDaySelection();
+                        });
+                    });
+
                 }).catch(error => {
                     console.error('Failed to load from Firebase, using local data:', error);
                     loadLocalWorkoutData();
@@ -751,6 +757,42 @@
                 loadLocalWorkoutData();
             }
         }
+
+        function loadWorkoutPlan() {
+            return new Promise((resolve) => {
+                if (!isOnline) {
+                    // Offline → use localStorage
+                    const localPlan = localStorage.getItem('workoutPlan');
+                    if (localPlan) {
+                        try {
+                            workoutPlan = JSON.parse(localPlan);
+                        } catch (e) {
+                            console.error('Invalid local workoutPlan', e);
+                        }
+                    }
+                    resolve();
+                    return;
+                }
+
+                // Online → try Firebase
+                database.ref('workoutPlan').once('value')
+                    .then(snapshot => {
+                        if (snapshot.exists()) {
+                            workoutPlan = snapshot.val();
+                            localStorage.setItem('workoutPlan', JSON.stringify(workoutPlan));
+                        } else {
+                            // Firebase empty → push local/default plan once
+                            database.ref('workoutPlan').set(workoutPlan);
+                        }
+                        resolve();
+                    })
+                    .catch(err => {
+                        console.error('Failed to load workoutPlan from Firebase', err);
+                        resolve(); // still continue app
+                    });
+            });
+        }
+
 
         function loadLocalWorkoutData() {
             const savedWorkoutData = localStorage.getItem('workoutData');
@@ -761,7 +803,13 @@
                     console.error('Error loading local workout data:', e);
                 }
             }
-            showDaySelection();
+            database.ref('workouts').once('value', snapshot => {
+                // build workoutData ...
+                loadWorkoutPlan().then(() => {
+                    showDaySelection();
+                });
+            });
+
         }
 
         function showDaySelection() {
@@ -1184,7 +1232,17 @@
                 });
 
                 workoutPlan.schedule = newSchedule;
+                // Save locally
                 localStorage.setItem('workoutPlan', JSON.stringify(workoutPlan));
+
+                // Save to Firebase
+                if (isOnline) {
+                    database.ref('workoutPlan').set(workoutPlan)
+                        .catch(err => {
+                            console.error('Firebase save failed:', err);
+                        });
+                }
+
 
                 errorDiv.classList.add('hidden');
                 successDiv.textContent = '✓ Plan gespeichert!';
