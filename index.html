@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -31,7 +32,7 @@
             background: white;
             border-radius: 20px;
             padding: 30px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             margin-bottom: 20px;
         }
 
@@ -141,7 +142,9 @@
             margin: 5px;
         }
 
-        input, select, textarea {
+        input,
+        select,
+        textarea {
             width: 100%;
             padding: 12px;
             border: 2px solid #e0e0e0;
@@ -151,7 +154,9 @@
             background: #f8f9fa;
         }
 
-        input:focus, select:focus, textarea:focus {
+        input:focus,
+        select:focus,
+        textarea:focus {
             outline: none;
             border-color: #667eea;
             background: white;
@@ -320,10 +325,21 @@
             position: relative;
         }
 
-        .heatmap-cell[data-level="1"] { background: #c6e48b; }
-        .heatmap-cell[data-level="2"] { background: #7bc96f; }
-        .heatmap-cell[data-level="3"] { background: #239a3b; }
-        .heatmap-cell[data-level="4"] { background: #196127; }
+        .heatmap-cell[data-level="1"] {
+            background: #c6e48b;
+        }
+
+        .heatmap-cell[data-level="2"] {
+            background: #7bc96f;
+        }
+
+        .heatmap-cell[data-level="3"] {
+            background: #239a3b;
+        }
+
+        .heatmap-cell[data-level="4"] {
+            background: #196127;
+        }
 
         .heatmap-legend {
             display: flex;
@@ -416,6 +432,7 @@
         }
     </style>
 </head>
+
 <body>
     <div id="offlineIndicator" class="offline-indicator">📡 Offline</div>
     <div id="syncIndicator" class="sync-indicator">🔄 Synchronisiere...</div>
@@ -424,14 +441,15 @@
         <div id="authScreen" class="card">
             <h1>🏋️ Workout Plan</h1>
             <label class="label" for="password">Passwort</label>
-            <input type="password" id="password" placeholder="Passwort eingeben" onkeypress="if(event.key==='Enter')login()">
+            <input type="password" id="password" placeholder="Passwort eingeben"
+                onkeypress="if(event.key==='Enter')login()">
             <button onclick="login()">Anmelden</button>
             <div id="authError" class="error hidden"></div>
         </div>
 
         <div id="dayScreen" class="hidden card">
             <h1>🏋️ Workout Plan</h1>
-            
+
             <div class="stat-row">
                 <div class="stat-item">
                     <div class="stat-value" id="totalDays">0</div>
@@ -485,7 +503,7 @@
             <div id="exerciseCard" class="hidden card">
                 <h2 id="currentExerciseName">Übung</h2>
                 <div class="exercise-details" id="currentExerciseDetails"></div>
-                
+
                 <div class="log-inputs">
                     <div>
                         <label class="label" for="logWeight">Gewicht (kg)</label>
@@ -541,14 +559,14 @@
         const database = firebase.database();
 
         const VALID_PASSWORD = "123456";
-        
+
         let workoutPlan = {
             "program_name": "4-Day Upper Lower Split",
             "schedule": {
-                "Dienstag": {"name": "Upper A - Kraft", "workout_type": "upper", "exercises": [{"name": "Schrägbankdrücken Langhantel", "sets": 4, "reps": "5-8"}, {"name": "Gewichtete Klimmzüge", "sets": 3, "reps": "6-8"}, {"name": "T-Bar Rudern", "sets": 3, "reps": "6-10"}, {"name": "Kabel Seitheben", "sets": 3, "reps": "12-15"}, {"name": "Überkopf Trizeps Kabel", "sets": 3, "reps": "10-12"}, {"name": "Bizeps Curl Kabel", "sets": 3, "reps": "10-12"}]},
-                "Donnerstag": {"name": "Lower A - Kraft", "workout_type": "lower", "exercises": [{"name": "Kniebeuge", "sets": 4, "reps": "4-6"}, {"name": "Rumänisches Kreuzheben", "sets": 3, "reps": "6-8"}, {"name": "Beinpresse", "sets": 3, "reps": "10-12"}, {"name": "Wadenheben stehend", "sets": 4, "reps": "8-12"}, {"name": "Beinheben hängend", "sets": 3, "reps": "10-15"}]},
-                "Samstag": {"name": "Upper B - Hypertrophie", "workout_type": "upper", "exercises": [{"name": "Kurzhantel Bankdrücken", "sets": 4, "reps": "8-12"}, {"name": "Kabel Flys", "sets": 3, "reps": "12-15"}, {"name": "Klimmzüge oder Latzug", "sets": 4, "reps": "8-12"}, {"name": "Rudern Kabel sitzend", "sets": 3, "reps": "10-12"}, {"name": "Kurzhantel Seitheben", "sets": 4, "reps": "12-20"}, {"name": "Reverse Flys Kabel", "sets": 3, "reps": "15-20"}, {"name": "Bizeps Curl EZ-Stange", "sets": 3, "reps": "10-12"}, {"name": "Trizeps Pushdown", "sets": 3, "reps": "12-15"}]},
-                "Sonntag": {"name": "Lower B - Hypertrophie", "workout_type": "lower", "exercises": [{"name": "Front Kniebeuge", "sets": 4, "reps": "6-10"}, {"name": "Beinbeuger liegend", "sets": 4, "reps": "10-15"}, {"name": "Hip Thrust", "sets": 3, "reps": "8-12"}, {"name": "Ausfallschritte", "sets": 3, "reps": "12-16 Schritte"}, {"name": "Wadenheben sitzend", "sets": 4, "reps": "12-20"}, {"name": "Kabel Crunches", "sets": 3, "reps": "12-15"}]}
+                "Dienstag": { "name": "Upper A - Kraft", "workout_type": "upper", "exercises": [{ "name": "Schrägbankdrücken Langhantel", "sets": 4, "reps": "5-8" }, { "name": "Gewichtete Klimmzüge", "sets": 3, "reps": "6-8" }, { "name": "T-Bar Rudern", "sets": 3, "reps": "6-10" }, { "name": "Kabel Seitheben", "sets": 3, "reps": "12-15" }, { "name": "Überkopf Trizeps Kabel", "sets": 3, "reps": "10-12" }, { "name": "Bizeps Curl Kabel", "sets": 3, "reps": "10-12" }] },
+                "Donnerstag": { "name": "Lower A - Kraft", "workout_type": "lower", "exercises": [{ "name": "Kniebeuge", "sets": 4, "reps": "4-6" }, { "name": "Rumänisches Kreuzheben", "sets": 3, "reps": "6-8" }, { "name": "Beinpresse", "sets": 3, "reps": "10-12" }, { "name": "Wadenheben stehend", "sets": 4, "reps": "8-12" }, { "name": "Beinheben hängend", "sets": 3, "reps": "10-15" }] },
+                "Samstag": { "name": "Upper B - Hypertrophie", "workout_type": "upper", "exercises": [{ "name": "Kurzhantel Bankdrücken", "sets": 4, "reps": "8-12" }, { "name": "Kabel Flys", "sets": 3, "reps": "12-15" }, { "name": "Klimmzüge oder Latzug", "sets": 4, "reps": "8-12" }, { "name": "Rudern Kabel sitzend", "sets": 3, "reps": "10-12" }, { "name": "Kurzhantel Seitheben", "sets": 4, "reps": "12-20" }, { "name": "Reverse Flys Kabel", "sets": 3, "reps": "15-20" }, { "name": "Bizeps Curl EZ-Stange", "sets": 3, "reps": "10-12" }, { "name": "Trizeps Pushdown", "sets": 3, "reps": "12-15" }] },
+                "Sonntag": { "name": "Lower B - Hypertrophie", "workout_type": "lower", "exercises": [{ "name": "Front Kniebeuge", "sets": 4, "reps": "6-10" }, { "name": "Beinbeuger liegend", "sets": 4, "reps": "10-15" }, { "name": "Hip Thrust", "sets": 3, "reps": "8-12" }, { "name": "Ausfallschritte", "sets": 3, "reps": "12-16 Schritte" }, { "name": "Wadenheben sitzend", "sets": 4, "reps": "12-20" }, { "name": "Kabel Crunches", "sets": 3, "reps": "12-15" }] }
             }
         };
 
@@ -610,7 +628,7 @@
         function updateOnlineStatus() {
             isOnline = navigator.onLine;
             const indicator = document.getElementById('offlineIndicator');
-            
+
             if (isOnline) {
                 indicator.textContent = '📡 Online';
                 indicator.classList.add('online');
@@ -629,7 +647,7 @@
 
         async function syncPendingData() {
             if (pendingSync.length === 0) return;
-            
+
             const syncIndicator = document.getElementById('syncIndicator');
             syncIndicator.classList.add('show');
 
@@ -637,16 +655,16 @@
                 for (const workout of pendingSync) {
                     await database.ref('workouts').push(workout);
                 }
-                
+
                 pendingSync = [];
                 localStorage.setItem('pendingSync', JSON.stringify(pendingSync));
-                
+
                 syncIndicator.textContent = '✓ Synchronisiert';
                 setTimeout(() => {
                     syncIndicator.classList.remove('show');
                     syncIndicator.textContent = '🔄 Synchronisiere...';
                 }, 2000);
-                
+
                 loadWorkoutData();
             } catch (error) {
                 console.error('Sync failed:', error);
@@ -667,7 +685,7 @@
             } else {
                 addToPendingSync(workout);
             }
-            
+
             const date = new Date(workout.timestamp);
             const dateStr = date.toISOString().split('T')[0];
             if (!workoutData[dateStr]) {
@@ -679,7 +697,7 @@
         function addToPendingSync(workout) {
             pendingSync.push(workout);
             localStorage.setItem('pendingSync', JSON.stringify(pendingSync));
-            
+
             const indicator = document.getElementById('offlineIndicator');
             indicator.textContent = `📡 Offline (${pendingSync.length} ausstehend)`;
             indicator.classList.add('show');
@@ -713,7 +731,7 @@
                     snapshot.forEach(child => {
                         workouts.push(child.val());
                     });
-                    
+
                     workoutData = {};
                     workouts.forEach(w => {
                         const date = new Date(w.timestamp);
@@ -886,7 +904,7 @@
         function renderExerciseList() {
             const exercises = workoutPlan.schedule[currentDay].exercises;
             const listDiv = document.getElementById('exerciseList');
-            
+
             listDiv.innerHTML = exercises.map((ex, idx) => {
                 let className = 'exercise-card';
                 if (idx === currentExerciseIndex) className += ' current';
@@ -911,7 +929,7 @@
 
         function showCurrentExercise() {
             const exercises = workoutPlan.schedule[currentDay].exercises;
-            
+
             if (currentExerciseIndex >= exercises.length) {
                 showComplete();
                 return;
@@ -924,12 +942,12 @@
             document.getElementById('completeCard').classList.add('hidden');
 
             document.getElementById('currentExerciseName').innerHTML = getExerciseLink(exercise.name);
-            document.getElementById('currentExerciseDetails').textContent = 
+            document.getElementById('currentExerciseDetails').textContent =
                 `${exercise.sets} Sätze × ${exercise.reps} Wiederholungen`;
-            
+
             document.getElementById('logWeight').value = '';
             document.getElementById('logReps').value = '';
-            
+
             renderExerciseList();
         }
 
@@ -976,7 +994,7 @@
 
         function startRestTimer() {
             remainingSeconds = 120;
-            
+
             document.getElementById('exerciseCard').classList.add('hidden');
             document.getElementById('restTimer').classList.remove('hidden');
 
@@ -997,7 +1015,7 @@
             const minutes = Math.floor(remainingSeconds / 60);
             const seconds = remainingSeconds % 60;
             const display = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-            
+
             const timerEl = document.getElementById('timerDisplay');
             timerEl.textContent = display;
 
@@ -1016,7 +1034,7 @@
 
         function showComplete() {
             clearInterval(timerInterval);
-            
+
             document.getElementById('exerciseCard').classList.add('hidden');
             document.getElementById('restTimer').classList.add('hidden');
             document.getElementById('completeCard').classList.remove('hidden');
@@ -1048,33 +1066,33 @@
             Object.keys(workoutPlan.schedule).forEach((day, dayIdx) => {
                 const workout = workoutPlan.schedule[day];
                 html += `
-                    <div class="edit-day-card" data-original-day="${day}">
+                    <div class="edit-day-card" data-day-index="${dayIdx}">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                             <div style="flex: 1;">
                                 <label class="label">Tag Name</label>
-                                <input type="text" class="day-name-input" value="${day}">
+                                <input type="text" class="day-name" data-original-day="${day}" value="${day}">
                             </div>
                             <button class="small danger" onclick="removeDay('${day}')" style="margin-left: 10px; margin-top: 20px;">🗑️ Tag löschen</button>
                         </div>
                         <div>
                             <label class="label">Workout Name</label>
-                            <input type="text" class="workout-name-input" value="${workout.name}">
+                            <input type="text" class="workout-name" data-day="${day}" value="${workout.name}">
                         </div>
                         <div style="margin-top: 15px;">
                             <label class="label">Übungen</label>
-                            <div class="exercises-list-container">
+                            <div class="exercises-list" data-day="${day}">
                                 ${workout.exercises.map((ex, idx) => `
-                                    <div class="edit-exercise-item" data-exercise-idx="${idx}">
+                                    <div class="edit-exercise-item">
                                         <div class="input-grid">
                                             <input type="text" class="ex-name" placeholder="Übungsname" value="${ex.name}">
                                             <input type="number" class="ex-sets" placeholder="Sätze" value="${ex.sets}">
                                             <input type="text" class="ex-reps" placeholder="Wdh." value="${ex.reps}">
                                         </div>
-                                        <button class="small danger" onclick="this.parentElement.remove()">🗑️ Löschen</button>
+                                        <button class="small danger" onclick="removeExercise('${day}', ${idx})">🗑️ Löschen</button>
                                     </div>
                                 `).join('')}
                             </div>
-                            <button class="small" onclick="addExerciseToDay(this)">➕ Übung hinzufügen</button>
+                            <button class="small" onclick="addExercise('${day}')">➕ Übung hinzufügen</button>
                         </div>
                     </div>
                 `;
@@ -1128,15 +1146,18 @@
         function savePlanEdits() {
             const errorDiv = document.getElementById('editError');
             const successDiv = document.getElementById('editSuccess');
-            
+
             try {
                 const newSchedule = {};
                 const dayCards = document.querySelectorAll('.edit-day-card');
 
                 dayCards.forEach(card => {
-                    const originalDay = card.dataset.originalDay;
-                    const newDayName = card.querySelector('.day-name-input').value.trim();
-                    const workoutName = card.querySelector('.workout-name-input').value.trim();
+                    const dayNameInput = card.querySelector('.day-name');
+                    const workoutNameInput = card.querySelector('.workout-name');
+
+                    const originalDay = dayNameInput.dataset.originalDay;
+                    const newDayName = dayNameInput.value.trim();
+                    const workoutName = workoutNameInput.value.trim();
 
                     if (!newDayName || !workoutName) {
                         throw new Error('Tag- und Workout-Namen dürfen nicht leer sein');
@@ -1158,20 +1179,18 @@
                     newSchedule[newDayName] = {
                         name: workoutName,
                         workout_type: workoutPlan.schedule[originalDay]?.workout_type || "custom",
-                        exercises: exercises
+                        exercises
                     };
                 });
 
                 workoutPlan.schedule = newSchedule;
                 localStorage.setItem('workoutPlan', JSON.stringify(workoutPlan));
-                
+
                 errorDiv.classList.add('hidden');
                 successDiv.textContent = '✓ Plan gespeichert!';
                 successDiv.classList.remove('hidden');
 
-                setTimeout(() => {
-                    backToDaySelection();
-                }, 1500);
+                setTimeout(backToDaySelection, 1500);
 
             } catch (e) {
                 errorDiv.textContent = 'Fehler beim Speichern: ' + e.message;
@@ -1188,4 +1207,5 @@
         });
     </script>
 </body>
+
 </html>
