@@ -742,13 +742,6 @@
                         workoutData[dateStr]++;
                     });
 
-                    database.ref('workouts').once('value', snapshot => {
-                        // build workoutData ...
-                        loadWorkoutPlan().then(() => {
-                            showDaySelection();
-                        });
-                    });
-
                 }).catch(error => {
                     console.error('Failed to load from Firebase, using local data:', error);
                     loadLocalWorkoutData();
