@@ -794,23 +794,17 @@
         }
 
 
-        function loadLocalWorkoutData() {
-            const savedWorkoutData = localStorage.getItem('workoutData');
-            if (savedWorkoutData) {
-                try {
-                    workoutData = JSON.parse(savedWorkoutData);
-                } catch (e) {
-                    console.error('Error loading local workout data:', e);
-                }
-            }
-            database.ref('workouts').once('value', snapshot => {
-                // build workoutData ...
-                loadWorkoutPlan().then(() => {
-                    showDaySelection();
-                });
-            });
+function loadLocalWorkoutData() {
+    const savedWorkoutData = localStorage.getItem('workoutData');
+    if (savedWorkoutData) {
+        workoutData = JSON.parse(savedWorkoutData);
+    }
 
-        }
+    loadWorkoutPlan().then(() => {
+        showDaySelection();
+    });
+}
+
 
         function showDaySelection() {
             document.getElementById('authScreen').classList.add('hidden');
