@@ -497,11 +497,11 @@
                 
                 <div class="log-inputs">
                     <div>
-                        <label class="label" for="logWeight">Gewicht (kg)</label>
+                        <label class="label" for="logWeight">Gewicht (kg) - Optional</label>
                         <input type="number" id="logWeight" step="0.5" placeholder="Optional">
                     </div>
                     <div>
-                        <label class="label" for="logReps">Wiederholungen</label>
+                        <label class="label" for="logReps">Wiederholungen - Optional</label>
                         <input type="number" id="logReps" placeholder="Optional">
                     </div>
                 </div>
@@ -797,10 +797,7 @@
                 const count = workoutData[dateStr] || 0;
 
                 let level = 0;
-                if (count > 0) level = 1;
-                if (count >= 2) level = 2;
-                if (count >= 4) level = 3;
-                if (count >= 6) level = 4;
+                if (count > 0) level = 4; // Alle Trainingstage bekommen die höchste Stufe
 
                 cell.dataset.level = level;
                 cell.title = `${dateStr}: ${count} ${count === 1 ? 'Workout' : 'Workouts'}`;
@@ -931,20 +928,26 @@
         function nextExercise() {
             const weight = parseFloat(document.getElementById('logWeight').value);
             const reps = parseInt(document.getElementById('logReps').value);
+            const exercise = workoutPlan.schedule[currentDay].exercises[currentExerciseIndex];
 
-            if (weight && reps) {
-                const exercise = workoutPlan.schedule[currentDay].exercises[currentExerciseIndex];
-                const workout = {
-                    exercise: exercise.name,
-                    weight: weight,
-                    reps: reps,
-                    sets: exercise.sets,
-                    timestamp: Date.now()
-                };
+            // Immer speichern, auch ohne Gewicht/Reps
+            const workout = {
+                day: currentDay,
+                exercise: exercise.name,
+                sets: exercise.sets,
+                timestamp: Date.now()
+            };
 
-                saveWorkout(workout);
-                localStorage.setItem('workoutData', JSON.stringify(workoutData));
+            // Optional: Gewicht und Reps hinzufügen falls eingegeben
+            if (weight && !isNaN(weight)) {
+                workout.weight = weight;
             }
+            if (reps && !isNaN(reps)) {
+                workout.reps = reps;
+            }
+
+            saveWorkout(workout);
+            localStorage.setItem('workoutData', JSON.stringify(workoutData));
 
             completedExercises.push(currentExerciseIndex);
             currentExerciseIndex++;
